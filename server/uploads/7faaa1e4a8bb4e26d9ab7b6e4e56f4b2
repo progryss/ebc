@@ -1,0 +1,10 @@
+﻿make,model,start_year,end_year,engine,engine_type,fuel_type,sku,car_end,bhp,caliper,disc_diameter,Included
+ABARTH,124 Spider,2010,2016,1.4,Turbo,Petrol,PD40K2617,99,170,Brembo,280mm,"PD40K2617, D2033"
+ABARTH,124 Spider,2010,2016,1.4,Turbo,Petrol,PD40K2618,99,170,Brembo,280mm,"PD40K2617, D2033"
+ABARTH,124 Spider,2010,2016,1.8,Normal,Electric,D2343434,99,170,Brembo,280mm,"PD40K2617, D2033"
+ABARTH,124 Spider,2007,2011,1.2,Turbo,Diesel,D2033,0,200,Brembo,200mm,D2033
+ABARTH,124 Spider,2016,2019,1.4,Turbo,CNG,PD13KF900,99,170,Brembo,280mm,
+ABARTH,500,2008,2011,1.4,Turbo,Petrol,PD13KF900,0,,,,
+AC,MK VI,2015,2015,6.2,Supercharged,Petrol,DP91162,1,,,,
+AC,MK VI,2015,2015,6.2,Supercharged,Petrol,DP91162,1,,,,
+MAZDA,1000,2017,2017,1,Twin Turbo,Diesel,D2033,1,,,,

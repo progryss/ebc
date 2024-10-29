@@ -1,0 +1,123 @@
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const tokenKey = process.env.SECRET_KEY;
+
+const userSchema = new Schema({
+    email: {
+        type: String,
+        required: true
+    },
+    password: {
+        type: String,
+        required: true
+    },
+    tokens: [
+        {
+            token: {
+                type: String,
+                required: true
+            }
+        }
+    ]
+});
+
+// Define schema for Shopify products
+const productSchema = new mongoose.Schema({
+    productId:{
+        type: String,
+        required: true,
+        unique: true
+    },
+    title: {
+        type: String,
+        required: true
+    },
+    handle: {
+        type: String,
+        required: true
+    },
+    image_src: {
+        type: String
+    },
+    tags: {
+        type: [String],  // Assuming tags might be an array of strings
+    },
+    variants: [{
+        id:{
+            type: String
+        },
+        sku: {
+            type: String
+        },
+        price: {
+            type: String
+        },
+        compare_at_price: {
+            type: String
+        },
+        image_id:{
+            type:String
+        }
+    }]
+});
+
+
+// Define schema for csv products
+const csvDataSchema = new mongoose.Schema({
+    make: {
+        type: String
+    },
+    model: {
+        type: String
+    },
+    year: {
+        type: Array
+    },
+    engineType: {
+        type: String
+    },
+    sku: {
+        type: String
+    },
+    bhp: {
+        type: String
+    },
+    caliper: {
+        type: String
+    },
+    discDiameter: {
+        type: String
+    },
+    included: {
+        type: Array
+    },
+    carEnd: {
+        type: String
+    }
+});
+
+userSchema.pre("save", async function (next) {
+    if (this.isModified("password")) {
+        this.password = await bcrypt.hash(this.password, 12);
+    }
+    next();
+});
+
+userSchema.methods.generateToken = async function () {
+    try {
+        let userToken = jwt.sign({ _id: this._id }, tokenKey, { expiresIn: "24h" });
+        this.tokens = this.tokens.concat({ token: userToken });
+        await this.save();
+        return userToken;
+    } catch (error) {
+        return "error in token generation function";
+    }
+};
+
+const User = mongoose.model('User', userSchema);
+const Product = mongoose.model('Shopify Product', productSchema);
+const CsvData = mongoose.model('Csv Option', csvDataSchema);
+
+module.exports = { User, Product, CsvData };
