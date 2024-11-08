@@ -92,7 +92,7 @@ export default function PasswordChange(props) {
     const [showPassword, setShowPassword] = useState(false);
     const [showconfirmPassword, setShowconfirmPassword] = useState(false);
 
-    const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:5000';
+    const serverUrl = process.env.REACT_APP_SERVER_URL;
 
     const navigate = useNavigate();
 

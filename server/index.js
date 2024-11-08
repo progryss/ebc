@@ -10,7 +10,7 @@ app.use(cookieParser());
 
 app.use(cors({
     origin: function (origin, callback) {
-        const allowedOrigins = ['http://localhost:3000','https://jgw-new.myshopify.com'];
+        const allowedOrigins = ['http://localhost:3000','https://jgw-new.myshopify.com','https://ebc.progryss.com/'];
         if (allowedOrigins.includes(origin) || !origin) {
             callback(null, true);
         } else {

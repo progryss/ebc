@@ -15,10 +15,10 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { IconButton, InputAdornment } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import logo from '../../images/ickle.png';
+// import logo from '../../images/ickle.png';
 import { ToastContainer, toast } from 'react-toastify';
 
-const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:5000';
+const serverUrl = process.env.REACT_APP_SERVER_URL;
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -116,9 +116,9 @@ export default function Login(props) {
         resetForm();
         if (response.status === 200) {
           toast.success('Logged In Successfully');
-          setTimeout(()=>{
+          setTimeout(() => {
             navigate("/");
-          },700)
+          }, 700)
         }
       } catch (error) {
         console.log(error, "Login API Error");
@@ -180,7 +180,9 @@ export default function Login(props) {
         <ThemeProvider theme={theme}>
           <Card variant="outlined">
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              <img src={logo} alt='' width='260' /></Box>
+              {/* <img src={logo} alt='' width='260' /> */}
+              <h3>EBC Brakes</h3>
+            </Box>
             <Typography
               component="h1"
               variant="h4"

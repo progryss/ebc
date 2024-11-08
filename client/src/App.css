@@ -229,7 +229,7 @@
   
   .searchParentWrapper {
     display: grid;
-    grid-template-columns: 1fr 3fr;
+    grid-template-columns: 1fr 4fr;
     gap: 10px;
   }
   
@@ -381,11 +381,6 @@
     column-gap: 20px;
   }
   
-  .detail-tab-box {
-    position: absolute;
-      right: 0;
-  }
-  
   .detail-tab-box h5 {
     width: max-content;
     margin-bottom: 0;
@@ -402,6 +397,8 @@
   
   .label-value {
     width: 100% !important;
+    padding: 5px 10px;
+    margin-bottom: 11px;
   }
   
   .comment-text {
@@ -520,7 +517,7 @@
     }
     
     .customerTable {
-      height: calc( 100vh - 310px );
+      height: calc( 100vh - 260px );
       overflow: scroll;
     }
     
@@ -574,7 +571,10 @@
     }
     
     .label-value:read-only {
-      border: none;
+      border:1px solid #dddcdc;
+    }
+    .label-value{
+      border:1px solid #000;
     }
     select.label-value{
       border: 1px solid #000 !important;

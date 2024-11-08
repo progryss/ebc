@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
-const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:5000';
+const serverUrl = process.env.REACT_APP_SERVER_URL;
 
 const StyledMenu = styled((props) => (
   <Menu

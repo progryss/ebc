@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
-const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:5000';
+const serverUrl = process.env.REACT_APP_SERVER_URL;
 
 const AuthGuard = ({ children }) => {
     const location = useLocation();

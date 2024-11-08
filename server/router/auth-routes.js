@@ -12,10 +12,12 @@ router.get('/validate-user',authenticate,Controler.validateUser);
 router.post('/logout',authenticate,Controler.logoutUser);
 router.put('/change-password',authenticate,Controler.updatePassword);
 
-router.post('/sync-products',Controler.syncProductFromShopify);
-router.post('/delete-products',Controler.deleteProductFromDb);
+
 router.post('/upload-csv',upload.single('csvFile'),Controler.uploadCsvData);
 router.post('/delete-csv',Controler.deleteCsvData);
+router.delete('/delete-rows',Controler.deleteMultipleRows)
+router.put('/update-row',Controler.updateRow)
+router.post('/add-row',Controler.addRow)
 
 router.get('/csv-data',Controler.getCsvData);
 router.get('/csv-data-makes',Controler.getCsvDataMakes);
@@ -25,6 +27,8 @@ router.get('/csv-data-engineTypes',Controler.getCsvDataEngineTypes);
 router.get('/csv-data-sku',Controler.getCsvDataSku);
 router.get('/csv-data-skus',Controler.getCsvDataSkus);
 
+router.post('/sync-products',Controler.syncProductFromShopify);
+router.post('/delete-products',Controler.deleteProductFromDb);
 router.get('/products-skus',Controler.getProductsBySkus);
 
 module.exports = router; 

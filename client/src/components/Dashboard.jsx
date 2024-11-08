@@ -1,17 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { ResizableBox } from "react-resizable";
 import "react-resizable/css/styles.css";
-import MemberDetails from "./MemberDetails";
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import Diversity3OutlinedIcon from '@mui/icons-material/Diversity3Outlined';
-import Papa from 'papaparse';
+import RowDetails from "./rowDetails";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ToastContainer, toast } from 'react-toastify';
-
-import Bottleneck from 'bottleneck';
+import { ToastContainer} from 'react-toastify';
+import Button from '@mui/material/Button';
+import Modal from '@mui/material/Modal';
+import AddRow from "./addRow";
 
 export default function Dashboard() {
   const [columns, setColumns] = useState([]);
@@ -24,11 +21,17 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage] = useState(100);
   const [columnWidths, setColumnWidths] = useState({});
-  const [viewingCustomer, setViewingCustomer] = useState(null);
+  const [rowPopop, setRowPopop] = useState(null);
   const [trigerUseeffectByDelete, setTrigerUseeffectByDelete] = useState(false);
   const tableHeaderRef = useRef(null);
   const [file, setFile] = useState(null);
   const [refreshData, setRefreshData] = useState(false);
+
+  const [modelOpen, setModelOpen] = React.useState(false);
+  const handleCloseModel = () => setModelOpen(false);
+  const [open, setOpen] = React.useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   const gettingOptions = JSON.parse(localStorage.getItem('filterOptions'))
   const navigate = useNavigate();
@@ -44,9 +47,15 @@ export default function Dashboard() {
     if (searchValue !== '') {
       const filteredData = data.filter((item) => {
         return (
-          item?.firstName?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
-          item?.countryCode?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
-          item?.email?.toLowerCase()?.includes(searchValue?.toLowerCase())
+          item?.make?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
+          item?.model?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
+          // item?.year?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
+          item?.engineType?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
+          item?.sku?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
+          item?.bhp?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
+          item?.caliper?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
+          item?.discDiameter?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
+          item?.carEnd?.toLowerCase()?.includes(searchValue?.toLowerCase())
         );
       });
       setFilteredResults(filteredData);
@@ -56,64 +65,66 @@ export default function Dashboard() {
     setCurrentPage(1);
   };
 
-  const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:5000';
+  const serverUrl = process.env.REACT_APP_SERVER_URL;
 
-  // useEffect(() => {
-  //   function hit() {
-  //     fetch(`${serverUrl}/api/get-users`, {
-  //       method: 'GET',
-  //       headers: {
-  //         "Content-Type":'application/json'
-  //       },
-  //       credentials: 'include'
-  //     })
-  //       .then(response => response?.json())
-  //       .then(data => {
-  //         if (data.length > 0) {
-  //           const keys = Object.keys(data[0])?.filter(key => key !== '_id' && key !== '__v');
-  //           const initialColumns = [
-  //             { id: 'serialNumber', title: 'Sr No.' },
-  //             // { id: 'selectAll', title: 'Select All' },
-  //             { id: 'submittionDate', title: 'Submittion Date' },
-  //             { id: 'firstName', title: 'First Name' },
-  //             { id: 'lastName', title: 'Last Name' },
-  //             { id: 'email', title: 'Email' },
-  //             { id: 'newsletter', title: 'Newsletter' },
-  //             { id: 'dueDate', title: 'Due Date' },
-  //             { id: 'relationship', title: 'Relationship' },
-  //             { id: 'countryCode', title: 'Country Code' },
-  //           ];
-  //           const savedColumns = JSON.parse(localStorage.getItem('columns'));
-  //           if (savedColumns) {
-  //             setColumns(savedColumns);
-  //           } else {
-  //             setColumns(initialColumns);
-  //           }
-  //           const rowData = data.map((item, index) => ({ ...item, originalIndex: index }));
-  //           const enrichedData = [...rowData]?.reverse();
-  //           setApiKeys(keys);
-  //           setData(enrichedData);
-  //           setFilteredResults(enrichedData);
-  //         } else {
-  //           const rowData = data.map((item, index) => ({ ...item, originalIndex: index }));
-  //           const enrichedData = [...rowData]?.reverse();
-  //           setData(enrichedData);
-  //           setFilteredResults(enrichedData);
-  //           setSelectAll(!selectAll);
-  //         }
-  //       })
-  //       .catch((err) => {
-  //         console.log(err, "Error in Getting Members");
-  //         navigate('/login');
+  useEffect(() => {
+    function hit() {
+      fetch(`${serverUrl}/api/csv-data`, {
+        method: 'GET',
+        headers: {
+          "Content-Type": 'application/json'
+        },
+        credentials: 'include'
+      })
+        .then(response => response?.json())
+        .then(data => {
+          if (data.length > 0) {
+            const keys = Object.keys(data[0])?.filter(key => key !== '_id' && key !== '__v');
+            const initialColumns = [
+              { id: 'serialNumber', title: 'Sr No.' },
+              { id: 'selectAll', title: 'Select All' },
+              { id: 'make', title: 'Make' },
+              { id: 'model', title: 'Model' },
+              { id: 'year', title: 'Year' },
+              { id: 'engineType', title: 'Engine Type' },
+              { id: 'sku', title: 'Sku' },
+              { id: 'bhp', title: 'Bhp' },
+              { id: 'caliper', title: 'Caliper' },
+              { id: 'discDiameter', title: 'Disc Diameter' },
+              { id: 'included', title: 'Included' },
+              { id: 'carEnd', title: 'Car End' }
+            ];
+            const savedColumns = JSON.parse(localStorage.getItem('columns'));
+            if (savedColumns) {
+              setColumns(savedColumns);
+            } else {
+              setColumns(initialColumns);
+            }
+            const rowData = data.map((item, index) => ({ ...item, originalIndex: index }));
+            const enrichedData = [...rowData]?.reverse();
+            setApiKeys(keys);
+            setData(enrichedData);
+            setFilteredResults(enrichedData);
+          } else {
+            const rowData = data.map((item, index) => ({ ...item, originalIndex: index }));
+            const enrichedData = [...rowData]?.reverse();
+            setData(enrichedData);
+            setFilteredResults(enrichedData);
+            setSelectAll(!selectAll);
+          }
+        })
+        .catch((err) => {
+          console.log(err, "Error in Getting Members");
+          navigate('/login');
 
-  //       })
-  //     const savedWidths = JSON.parse(localStorage.getItem('columnWidths'));
-  //     if (savedWidths) {
-  //       setColumnWidths(savedWidths);
-  //     }
-  //   }
-  //   hit()
-  // }, [viewingCustomer, trigerUseeffectByDelete, refreshData]);
+        })
+      const savedWidths = JSON.parse(localStorage.getItem('columnWidths'));
+      if (savedWidths) {
+        setColumnWidths(savedWidths);
+      }
+    }
+    hit()
+  }, [rowPopop, trigerUseeffectByDelete, refreshData]);
 
   useEffect(() => {
     const filteredData = data.filter((item) => {
@@ -211,7 +222,7 @@ export default function Dashboard() {
       behavior: 'smooth',
     });
   };
-  
+
   const getPageNumbers = () => {
     const totalPageNumbersToShow = 3; // Number of page numbers to display
     const totalPageNumbers = totalPages;
@@ -269,15 +280,6 @@ export default function Dashboard() {
     setSelectAll(newSelectedRows.length === data.length);
   };
 
-  const handleResetFilter = () => {
-    setFilterOptions({
-      relationship: "null",
-      filterMonth: "null",
-      dateFrom: "",
-      dateTo: ""
-    })
-  }
-
   function compareMonthYear(itemDate, monthYearStr) {
     const date = new Date(itemDate * 1000);
     const [month, year] = monthYearStr.split('_');
@@ -285,55 +287,29 @@ export default function Dashboard() {
     return date.getFullYear() === parseInt(year) && date.getMonth() === monthIndex;
   }
 
-  if (viewingCustomer) {
-    return <MemberDetails customer={viewingCustomer} onBack={() => setViewingCustomer(null)} />;
-  }
-
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
 
-
-
-
-
-
-
-
-
-
-  // function to convert the Unix timestamp (in seconds) to a human-readable date format.
-  const formatDueDate = (timestamp) => {
-    if (isNaN(timestamp)) return 'NA';
-    const date = new Date(timestamp * 1000);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
-
-  function getNext12Months() {
-    const months = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-
-    const currentDate = new Date();
-    const next12Months = [];
-
-    for (let i = 0; i < 12; i++) {
-      const currentMonth = currentDate.getMonth() + i;
-      const monthIndex = currentMonth % 12;
-      const year = currentDate.getFullYear() + Math.floor(currentMonth / 12);
-
-      next12Months.push({
-        value: `${months[monthIndex].toLowerCase()}_${year}`,
-        label: `${months[monthIndex]} ${year}`
-      });
+  const deleteRowFromTable = async () => {
+    // console.log(selectedRows);
+    let userResponseText = selectedRows.length === 0 ? "No data Selected" : `Are you sure you want to delete ${selectedRows.length} Enquiries?`;
+    const userResponse = window.confirm(userResponseText);
+    if (userResponse) {
+      try {
+        const response = await axios.delete(`${serverUrl}/api/delete-rows`, {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          data: { ids: selectedRows }
+        });
+        setTrigerUseeffectByDelete(!trigerUseeffectByDelete)
+      } catch (error) {
+        console.error('Error:', error);
+      }
     }
-
-    return next12Months;
+    setSelectedRows([])
   }
 
   const syncProduct = async () => {
@@ -363,6 +339,8 @@ export default function Dashboard() {
     }
   }
 
+  const fileInputRef = React.useRef();
+
   const handleUploadCsv = async () => {
     if (!file) {
       alert('Please select a file first!');
@@ -381,6 +359,11 @@ export default function Dashboard() {
       if (response.ok) {
         const result = await response.text();
         alert(result);
+        setFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""; // Clear file input field
+        }
+        setTrigerUseeffectByDelete(!trigerUseeffectByDelete)
       } else {
         const errorText = await response.text();
         throw new Error(`Failed to upload file: ${errorText}`);
@@ -397,39 +380,38 @@ export default function Dashboard() {
         method: 'POST'
       });
       alert('CSV data deleted successfully');
+      refreshIt()
     } catch (error) {
       console.error('Error in deleting Csv data', error);
       alert('Failed to delete Csv data.');
     }
   }
 
+  const refreshIt = () => {
+    setRefreshData(!refreshData)
+  }
+
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={2000}
-        theme="light"
-      />
+     <ToastContainer position="top-right" hideProgressBar={true} />
+
 
       <div className="container-fluid customer-container">
         <div className="card card-block border-0 customer-table-css-main">
           <div className="card-body p-0">
-            <div className="p-3 bg-light add-cutomer-section">
-              <div className="row mb-2">
+            <div className="py-3 bg-light add-cutomer-section">
+              <div className="row">
                 <div className="col-lg-12">
                   <div className="d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center gap-2">
-                      <span><Diversity3OutlinedIcon sx={{ fontSize: "35px" }} /></span>
-                      <span>
-                        <h5 className="mb-0">Members</h5>
-                      </span>
+                      <span className="no-of-item">{filteredResults.length} Items</span>
                     </div>
                     <div className="searchParentWrapper">
                       <div className="input-group">
                         <input
                           type="text"
                           className="form-control bg-custom border-end-0 search-input"
-                          placeholder="Search Customer"
+                          placeholder="Search"
                           onChange={(e) => searchItems(e.target.value)}
                         />
                         <div className="input-group-append">
@@ -444,7 +426,7 @@ export default function Dashboard() {
                       </div>
                       <div className="d-flex">
                         <div>
-                          <input type="file" accept=".csv" onChange={handleFileChange} className="importCompany" />
+                          <input type="file" accept=".csv" onChange={handleFileChange} ref={fileInputRef} className="importCompany" />
                           <button
                             className="btn btn-primary"
                             onClick={handleUploadCsv}
@@ -458,6 +440,13 @@ export default function Dashboard() {
                         >
                           <i className="fa fa-trash me-1"></i> Delete CSV
                         </button>
+
+                        <button
+                          className="btn btn-primary ms-2"
+                          onClick={deleteRowFromTable}
+                        >
+                          <i className="fa fa-trash me-1"></i> Delete Row
+                        </button>
                         <button
                           className="btn btn-primary ms-2"
                           onClick={syncProduct}
@@ -470,83 +459,7 @@ export default function Dashboard() {
                         >
                           <i className="fa fa-trash me-1"></i> Delete Product
                         </button>
-                        {/* <button
-                        className="btn btn-primary add-customer-btn ms-2" onClick={deleteRowFromTable}>
-                        <i className="fa fa-trash"></i>
-                      </button> */}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="row">
-                <div className="col-lg-12">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <span className="no-of-item me-3">{filteredResults.length} Items</span>
-                    </div>
-                    <div>
-                      <div className="d-flex gap-2">
-                        <div className="input-group">
-                          <label style={{ display: "flex", alignItems: "center", marginRight: "10px" }}>From</label>
-                          <input
-                            type="date"
-                            className="form-control bg-custom"
-                            value={filterOptions.dateFrom}
-                            onChange={(e) => setFilterOptions({ ...filterOptions, dateFrom: e.target.value })}
-                          />
-                        </div>
-                        <div className="input-group">
-                          <label style={{ display: "flex", alignItems: "center", margin: "0 10px" }}>To</label>
-                          <input
-                            type="date"
-                            className="form-control bg-custom"
-                            value={filterOptions.dateTo}
-                            onChange={(e) => setFilterOptions({ ...filterOptions, dateTo: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <Select
-                            sx={{ minWidth: "150px" }}
-                            labelId=""
-                            id="relationship-select-small"
-                            value={filterOptions.relationship}
-                            onChange={(e) => { setFilterOptions({ ...filterOptions, relationship: e.target.value }) }}
-                          >
-                            <MenuItem value="null" disabled>Relationship</MenuItem>
-                            <MenuItem value="father">Father</MenuItem>
-                            <MenuItem value="mother">Mother</MenuItem>
-                            <MenuItem value="grandparent">Grandparent</MenuItem>
-                            <MenuItem value="friend">Friend</MenuItem>
-                            <MenuItem value="other">Other</MenuItem>
-                          </Select>
-                        </div>
-                        <div>
-                          <Select
-                            sx={{ minWidth: "175px" }}
-                            labelId=""
-                            id="dueDate-select-small"
-                            value={filterOptions.filterMonth}
-                            onChange={(e) => { setFilterOptions({ ...filterOptions, filterMonth: e.target.value }) }}
-                          >
-                            <MenuItem value="null" disabled>Month</MenuItem>
-                            {getNext12Months().map((month) => (
-                              <MenuItem key={month.value} value={month.value}>
-                                {month.label}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </div>
-                        <div>
-                          <button
-                            className="btn btn-primary ml-3 text-nowrap"
-                            type="button"
-                            onClick={handleResetFilter}
-                          >
-                            Reset Filter
-                          </button>
-                        </div>
-                        <div className="dropdown">
+                        <div className="dropdown ms-2">
                           <button
                             className="btn btn-primary ml-3 dropdown-toggle text-nowrap"
                             type="button"
@@ -580,6 +493,20 @@ export default function Dashboard() {
               </div>
             </div>
 
+            <div>
+              <Button variant="contained" onClick={handleOpen} className="mb-3">Add Row</Button>
+              <Modal
+                open={open}
+                onClose={handleClose}
+                aria-labelledby="modal-modal-title"
+                aria-describedby="modal-modal-description"
+              >
+                <div>
+                  <AddRow refresh={refreshIt} close={handleClose} />
+                </div>
+              </Modal>
+            </div>
+
             <div className="table-responsive customerTable">
               <DragDropContext onDragEnd={onDragEnd}>
                 <table className="table text-start customer-table-css">
@@ -589,14 +516,13 @@ export default function Dashboard() {
                         <tr ref={provided.innerRef} {...provided.droppableProps}>
                           {columns.map((column, index) => (
                             <Draggable
-                              key={column.id}
+                              key={`row-${index}`}
                               draggableId={column.id}
                               index={index}
                               isDragDisabled={index === 0 || index === 1}
                             >
                               {(provided) => (
                                 <th
-                                  key={column.id}
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   className="text-center"
@@ -613,11 +539,13 @@ export default function Dashboard() {
                                   >
                                     <div {...(index !== 0 && index !== 1 ? provided.dragHandleProps : {})}>
                                       {column.id === 'selectAll' ? (
-                                        <input
-                                          type="checkbox"
-                                          checked={selectAll}
-                                          onChange={handleSelectAll}
-                                        />
+                                        <>
+                                          <input
+                                            type="checkbox"
+                                            checked={selectAll}
+                                            onChange={handleSelectAll}
+                                          />
+                                        </>
                                       ) : (
                                         <div className="d-flex align-items-center gap-2 justify-content-between">
                                           <span className="truncate-text" title={column.title}>{column.title}</span>
@@ -642,21 +570,26 @@ export default function Dashboard() {
                   <tbody>
                     {currentRows.length > 0 ? (
                       currentRows.map((row, rowIndex) => (
-                        <tr key={row.id} onClick={(e) => {
-                          const target = e.target;
-                          const isCheckbox = target.tagName.toLowerCase() === 'input' && target.type === 'checkbox';
-                          if (!isCheckbox) {
-                            setViewingCustomer(row);
-                          }
-                        }} style={{ cursor: "pointer" }}>
-                          {columns.map((column) => {
+                        <tr
+                          key={`row-${rowIndex}`}
+                          onClick={(e) => {
+                            const target = e.target;
+                            const isCheckbox = target.tagName.toLowerCase() === 'input' && target.type === 'checkbox';
+                            if (!isCheckbox) {
+                              setRowPopop(row);
+                              setModelOpen(true)
+                            }
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          {columns.map((column,index) => {
                             if (column.id === 'serialNumber') {
                               return (
-                                <td key={column.id}>{indexOfFirstRow + rowIndex + 1}</td>
+                                <td key={`row-${index}`}>{indexOfFirstRow + rowIndex + 1}</td>
                               );
                             } else if (column.id === 'selectAll') {
                               return (
-                                <td key={column.id}>
+                                <td key={`row-${index}`}>
                                   <input
                                     type="checkbox"
                                     checked={selectedRows.includes(row._id)}
@@ -664,30 +597,16 @@ export default function Dashboard() {
                                   />
                                 </td>
                               );
+                            } else if (column.id === 'year') {
+                              return (
+                                <td key={`row-${index}`}>
+                                  <span>{row[column.id][0] + "-" + row[column.id][row[column.id].length - 1]}</span>
+                                </td>
+                              );
                             } else {
                               return (
-                                <td key={column.id} >
-                                  {row[column.id] && typeof row[column.id] === 'object' ? (
-                                    <div>
-                                      {column.id === 'address' && (
-                                        <div>
-                                          <div>Street: {row[column.id].street}</div>
-                                          <div>Suite: {row[column.id].suite}</div>
-                                          <div>City: {row[column.id].city}</div>
-                                          <div>Zipcode: {row[column.id].zipcode}</div>
-                                        </div>
-                                      )}
-                                      {column.id === 'company' && (
-                                        <div>
-                                          <div>Name: {row[column.id].name}</div>
-                                          <div>Catch Phrase: {row[column.id].catchPhrase}</div>
-                                          <div>Business: {row[column.id].bs}</div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <span className={column.id}> {column.id === 'dueDate' ? formatDueDate(row[column.id]) : row[column.id]} </span>
-                                  )}
+                                <td key={`row-${index}`} >
+                                  <span className={column.id}> {column.id === 'included' ? row[column.id].join(', ') : row[column.id]} </span>
                                 </td>
                               );
                             }
@@ -706,7 +625,6 @@ export default function Dashboard() {
               </DragDropContext>
             </div>
 
-            {/* pagination */}
             {/* pagination */}
             {filteredResults.length > 0 && (
               <nav className="mt-3">
@@ -759,6 +677,16 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      <Modal
+        open={modelOpen}
+        onClose={handleCloseModel}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <div>
+          <RowDetails data={rowPopop} refresh={refreshIt} closeModel={handleCloseModel} />
+        </div>
+      </Modal>
     </>
   )
 }

@@ -347,8 +347,8 @@ const getRealTimeInventoryStatus = async (variantId) => {
                 password: password
             }
         });
-        const inventoryData = response.data.variant.inventory_quantity;
-        return inventoryData ;
+        const realTimeVariantData = response.data.variant;
+        return realTimeVariantData ;
 
     } catch (error) {
         console.error('Error fetching real-time inventory status:', error);
@@ -372,17 +372,18 @@ const getCsvDataSku = async (req, res) => {
             Product.findOne({ 'variants.sku': sku })
         ]);
 
-        let inventoryQuantity;
+        let realTimeVariant;
         const variant = product.variants.filter(variant => variant.sku === sku);
 
         if (variant) {
-            inventoryQuantity = await getRealTimeInventoryStatus(variant[0].id);
+            realTimeVariant = await getRealTimeInventoryStatus(variant[0].id);
         }
 
         const response = {
             query: CsvOptions,
             product: product,
-            stock: inventoryQuantity
+            stock: realTimeVariant.inventory_quantity,
+            continueSelling: realTimeVariant.inventory_policy
         };
 
         res.status(200).send(response)
@@ -406,9 +407,9 @@ const getCsvDataSkus = async (req, res) => {
 
         // Perform aggregation to get unique SKUs for the selected dropdown values
         const uniqueSKUs = await CsvData.aggregate([
-            { $match: { model: selectedModel, make: selectedMake, year: selectedYear, engineType: selectedEngineType } }, // Filter documents by selection
-            { $group: { _id: "$sku" } }, // Group documents by "sku" field
-            { $project: { _id: 0, sku: "$_id" } } // Project the "sku" field without _id
+            { $match: { model: selectedModel, make: selectedMake, year: selectedYear, engineType: selectedEngineType } }, 
+            { $group: { _id: "$sku" } },
+            { $project: { _id: 0, sku: "$_id" } }
         ]);
 
         res.status(200).send(uniqueSKUs)
@@ -445,6 +446,82 @@ const getProductsBySkus = async (req, res) => {
     }
 }
 
+const deleteMultipleRows = async (req, res) => {
+    try {
+        const rowId = req.body.ids;
+        if (!Array.isArray(rowId) || rowId.length === 0) {
+            return res.status(400).send('Invalid or no IDs provided');
+        }
+        const result = await CsvData.deleteMany({
+            _id: { $in: rowId }
+        });
+        if (result.deletedCount === 0) {
+            return res.status(404).send('No row found to delete');
+        }
+        return res.status(200).send(`${result.deletedCount} csv data deleted successfully`);
+    } catch (error) {
+        console.error('Error deleting csv data:', error);
+        res.status(500).send('Error deleting csv data');
+    }
+}
+
+const updateRow = async (req,res)=>{
+    try {
+        const data = req.body;
+        const updatedRow = await CsvData.findByIdAndUpdate(
+            data._id,
+            {
+                $set:{
+                    make: data.make,
+                    model: data.model,
+                    year: data.year,
+                    engineType: data.engineType,
+                    sku: data.sku,
+                    bhp: data.bhp,
+                    caliper: data.caliper,
+                    discDiameter: data.discDiameter,
+                    included: data.included,
+                    carEnd: data.carEnd
+                }
+            },
+            { new: true, runValidators: true }
+        )
+        if (!updatedRow) {
+            return res.status(404).send('row not found');
+        }
+
+        res.status(200).send('row data updated successfully');
+    } catch (error) {
+        console.error('Error in row data:', error);
+        res.status(500).send('Error updating row data');
+    }
+}
+
+const addRow = async (req,res) => {
+    const data = req.body;
+    try {
+        const newRow = new CsvData({
+            make:data.make,
+            model:data.model,
+            year:getYearsInRange(data.startYear, data.endYear),
+            engineType:data.engineType,
+            sku:data.sku,
+            bhp:data.bhp,
+            caliper:data.caliper,
+            discDiameter:data.discDiameter,
+            included:data.included.split(','),
+            carEnd:data.carEnd
+        });
+
+        await newRow.save()
+        return res.status(201).send('new row added')
+        
+    } catch (error) {
+        console.log('error in adding new row data',error)
+        return res.status(500).send('error in adding new row data')
+    }
+}
+
 module.exports = {
     validateUser,
     userLogin,
@@ -462,5 +539,8 @@ module.exports = {
     getCsvDataEngineTypes,
     getCsvDataSku,
     getCsvDataSkus,
-    getProductsBySkus
+    getProductsBySkus,
+    deleteMultipleRows,
+    updateRow,
+    addRow
 }; 
