@@ -31,4 +31,5 @@ router.post('/sync-products',Controler.syncProductFromShopify);
 router.post('/delete-products',Controler.deleteProductFromDb);
 router.get('/products-skus',Controler.getProductsBySkus);
 
+router.get('/upload/progress',Controler.progress)
 module.exports = router; 

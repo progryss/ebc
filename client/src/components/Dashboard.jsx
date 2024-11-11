@@ -5,12 +5,15 @@ import "react-resizable/css/styles.css";
 import RowDetails from "./rowDetails";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ToastContainer} from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import Button from '@mui/material/Button';
 import Modal from '@mui/material/Modal';
 import AddRow from "./addRow";
+import { useProgressToast } from "./customHooks/useProgressToast";
 
 export default function Dashboard() {
+  const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
+
   const [columns, setColumns] = useState([]);
   const [data, setData] = useState([]);
   const [filteredResults, setFilteredResults] = useState([]);
@@ -269,7 +272,7 @@ export default function Dashboard() {
   const handleSelectAll = () => {
     const newSelectAll = !selectAll;
     setSelectAll(newSelectAll);
-    setSelectedRows(newSelectAll ? data.map((row) => row._id) : []);
+    setSelectedRows(newSelectAll ? currentRows.map((row) => row._id) : []);
   };
 
   const handleSelectRow = (id) => {
@@ -294,19 +297,24 @@ export default function Dashboard() {
 
   const deleteRowFromTable = async () => {
     // console.log(selectedRows);
-    let userResponseText = selectedRows.length === 0 ? "No data Selected" : `Are you sure you want to delete ${selectedRows.length} Enquiries?`;
+    let userResponseText = selectedRows.length === 0 ? "No data Selected" : `Are you sure you want to delete ${selectedRows.length} Rows ?`;
     const userResponse = window.confirm(userResponseText);
     if (userResponse) {
+      const toastId = showProgressToast(`Deleting ${selectedRows.length} rows`);
+      updateProgress(toastId, 'loader', `Deleting ${selectedRows.length} rows`);
       try {
-        const response = await axios.delete(`${serverUrl}/api/delete-rows`, {
+        await axios.delete(`${serverUrl}/api/delete-rows`, {
           headers: {
             'Content-Type': 'application/json'
           },
           data: { ids: selectedRows }
         });
+        setSelectAll(false)
         setTrigerUseeffectByDelete(!trigerUseeffectByDelete)
+        finalizeToast(toastId, true, `${selectedRows.length} rows deleted Successfully`);
       } catch (error) {
         console.error('Error:', error);
+        finalizeToast(toastId, false, `Error in deleting selected rows `);
       }
     }
     setSelectedRows([])
@@ -341,6 +349,32 @@ export default function Dashboard() {
 
   const fileInputRef = React.useRef();
 
+  function updateProgressBar(toastId) {
+    const progressInterval = setInterval(async () => {
+      const response = await fetch(`${serverUrl}/api/upload/progress`);
+      const data = await response.json();
+
+      if (!data.total) { // Ensure total is not zero or undefined to avoid division by zero
+        console.error('Total number of records is zero or not defined.');
+        clearInterval(progressInterval);
+        finalizeToast(toastId, false, "Failed to fetch progress");
+        return;
+      }
+
+      const percentage = (data.progress / data.total) * 100;
+      setProgress(percentage);
+      updateProgress(toastId, percentage, 'Uploading CSV');
+      if (percentage >= 100) {
+        clearInterval(progressInterval);
+        finalizeToast(toastId, true, `${data.total} Records uploaded !`);
+        setTrigerUseeffectByDelete(!trigerUseeffectByDelete)
+      }
+    }, 500);
+  }
+
+
+
+
   const handleUploadCsv = async () => {
     if (!file) {
       alert('Please select a file first!');
@@ -350,6 +384,9 @@ export default function Dashboard() {
     const formData = new FormData();
     formData.append('csvFile', file);
 
+    setProgress(0);  // Reset progress at the start
+    const toastId = showProgressToast('Uploading CSV');
+
     try {
       const response = await fetch(`${serverUrl}/api/upload-csv`, {
         method: 'POST',
@@ -357,34 +394,38 @@ export default function Dashboard() {
       });
 
       if (response.ok) {
-        const result = await response.text();
-        alert(result);
+        updateProgressBar(toastId);
         setFile(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = ""; // Clear file input field
         }
-        setTrigerUseeffectByDelete(!trigerUseeffectByDelete)
       } else {
         const errorText = await response.text();
         throw new Error(`Failed to upload file: ${errorText}`);
       }
     } catch (error) {
+      finalizeToast(toastId, false, "Failed to upload CSV");
       console.error('Error uploading file:', error);
       alert('Error uploading file');
     }
   };
 
+
   const deleteCsvData = async () => {
+    const userResponse = window.confirm('Are you sure you want to delete?');
+    if (!userResponse) return;
+    const toastId = showProgressToast('Deleting Csv data');
+    updateProgress(toastId, 'loader', 'Deleting Csv data');
     try {
       await fetch(`${serverUrl}/api/delete-csv`, {
         method: 'POST'
       });
-      alert('CSV data deleted successfully');
       refreshIt()
+      finalizeToast(toastId, true, 'Csv Data Deleted.');
     } catch (error) {
       console.error('Error in deleting Csv data', error);
-      alert('Failed to delete Csv data.');
-    }
+      finalizeToast(toastId, false, 'Failed to delete Csv data.');
+    } 
   }
 
   const refreshIt = () => {
@@ -393,7 +434,7 @@ export default function Dashboard() {
 
   return (
     <>
-     <ToastContainer position="top-right" hideProgressBar={true} />
+      <ToastContainer position="top-right" hideProgressBar={true} />
 
 
       <div className="container-fluid customer-container">
@@ -439,13 +480,6 @@ export default function Dashboard() {
                           onClick={deleteCsvData}
                         >
                           <i className="fa fa-trash me-1"></i> Delete CSV
-                        </button>
-
-                        <button
-                          className="btn btn-primary ms-2"
-                          onClick={deleteRowFromTable}
-                        >
-                          <i className="fa fa-trash me-1"></i> Delete Row
                         </button>
                         <button
                           className="btn btn-primary ms-2"
@@ -494,7 +528,7 @@ export default function Dashboard() {
             </div>
 
             <div>
-              <Button variant="contained" onClick={handleOpen} className="mb-3">Add Row</Button>
+              <Button variant="contained" onClick={handleOpen} className="mb-3 me-2">Add Row</Button>
               <Modal
                 open={open}
                 onClose={handleClose}
@@ -505,6 +539,7 @@ export default function Dashboard() {
                   <AddRow refresh={refreshIt} close={handleClose} />
                 </div>
               </Modal>
+              <Button variant="contained" onClick={deleteRowFromTable} className="mb-3"><i className="fa fa-trash me-1"></i> Delete Rows</Button>
             </div>
 
             <div className="table-responsive customerTable">
@@ -582,7 +617,7 @@ export default function Dashboard() {
                           }}
                           style={{ cursor: "pointer" }}
                         >
-                          {columns.map((column,index) => {
+                          {columns.map((column, index) => {
                             if (column.id === 'serialNumber') {
                               return (
                                 <td key={`row-${index}`}>{indexOfFirstRow + rowIndex + 1}</td>

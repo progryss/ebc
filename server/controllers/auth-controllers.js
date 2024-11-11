@@ -159,10 +159,12 @@ async function insertBatch(batch, batchNumber) {
     console.log(`Batch ${batchNumber} inserted successfully.`);
 }
 const BATCH_SIZE = 10000;
+let batchNumber = 0;
+let totalRecords = 0;
+
 // function to save csv product to db in batch
 async function processCsvFile(filePath) {
     let batch = []; // Array to hold the batch
-    let batchNumber = 0;
 
     const stream = fs.createReadStream(filePath);
     const csvStream = csv.parse({ headers: true })
@@ -215,10 +217,30 @@ async function processCsvFile(filePath) {
     stream.pipe(csvStream);
 }
 
+async function countCsvRows(filePath) {
+    return new Promise((resolve, reject) => {
+        let rowCount = 0;
+        fs.createReadStream(filePath)
+            .pipe(csv.parse({ headers: true }))  // Parse CSV with headers
+            .on('data', (row) => {
+                rowCount++;
+            })
+            .on('end', () => {
+                console.log(`Total batches: ${rowCount / 10000}`);
+                resolve(rowCount);
+            })
+            .on('error', reject);  // Handle any errors
+    });
+}
+
 const uploadCsvData = async (req, res) => {
+    batchNumber = 0;
+    totalRecords = 0;
     if (!req.file) {
         return res.status(400).send('No file uploaded.');
     }
+
+    totalRecords = await countCsvRows(req.file.path);
     try {
         // Assume a function processCsvFile that processes your CSV file
         await processCsvFile(req.file.path);
@@ -228,6 +250,22 @@ const uploadCsvData = async (req, res) => {
         res.status(500).send('Error uploading csv');
     }
 };
+
+const progress = async (req, res) => {
+
+    if (totalRecords > 0) {
+        res.json({
+            status: 'processing',
+            progress: batchNumber,
+            total: totalRecords / 10000
+        });
+    } else {
+        res.json({
+            status: 'complete',
+            progress: totalRecords
+        });
+    }
+}
 
 const deleteCsvData = async (req, res) => {
     try {
@@ -348,7 +386,7 @@ const getRealTimeInventoryStatus = async (variantId) => {
             }
         });
         const realTimeVariantData = response.data.variant;
-        return realTimeVariantData ;
+        return realTimeVariantData;
 
     } catch (error) {
         console.error('Error fetching real-time inventory status:', error);
@@ -407,7 +445,7 @@ const getCsvDataSkus = async (req, res) => {
 
         // Perform aggregation to get unique SKUs for the selected dropdown values
         const uniqueSKUs = await CsvData.aggregate([
-            { $match: { model: selectedModel, make: selectedMake, year: selectedYear, engineType: selectedEngineType } }, 
+            { $match: { model: selectedModel, make: selectedMake, year: selectedYear, engineType: selectedEngineType } },
             { $group: { _id: "$sku" } },
             { $project: { _id: 0, sku: "$_id" } }
         ]);
@@ -465,13 +503,13 @@ const deleteMultipleRows = async (req, res) => {
     }
 }
 
-const updateRow = async (req,res)=>{
+const updateRow = async (req, res) => {
     try {
         const data = req.body;
         const updatedRow = await CsvData.findByIdAndUpdate(
             data._id,
             {
-                $set:{
+                $set: {
                     make: data.make,
                     model: data.model,
                     year: data.year,
@@ -497,27 +535,27 @@ const updateRow = async (req,res)=>{
     }
 }
 
-const addRow = async (req,res) => {
+const addRow = async (req, res) => {
     const data = req.body;
     try {
         const newRow = new CsvData({
-            make:data.make,
-            model:data.model,
-            year:getYearsInRange(data.startYear, data.endYear),
-            engineType:data.engineType,
-            sku:data.sku,
-            bhp:data.bhp,
-            caliper:data.caliper,
-            discDiameter:data.discDiameter,
-            included:data.included.split(','),
-            carEnd:data.carEnd
+            make: data.make,
+            model: data.model,
+            year: getYearsInRange(data.startYear, data.endYear),
+            engineType: data.engineType,
+            sku: data.sku,
+            bhp: data.bhp,
+            caliper: data.caliper,
+            discDiameter: data.discDiameter,
+            included: data.included.split(','),
+            carEnd: data.carEnd
         });
 
         await newRow.save()
         return res.status(201).send('new row added')
-        
+
     } catch (error) {
-        console.log('error in adding new row data',error)
+        console.log('error in adding new row data', error)
         return res.status(500).send('error in adding new row data')
     }
 }
@@ -542,5 +580,6 @@ module.exports = {
     getProductsBySkus,
     deleteMultipleRows,
     updateRow,
-    addRow
+    addRow,
+    progress
 }; 
