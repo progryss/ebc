@@ -8,7 +8,7 @@ const AuthGuard = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const [validUser, setValidUser] = useState(null);
-    
+
 
     // Function to validate user session
     const userValidation = useCallback(async () => {
@@ -24,7 +24,7 @@ const AuthGuard = ({ children }) => {
             setValidUser(response.data);
 
         } catch (error) {
-            
+
             if (error.response && error.response.status === 401) {
                 console.log('User not verified. Redirecting to login.');
                 navigate("/login");
@@ -36,15 +36,17 @@ const AuthGuard = ({ children }) => {
 
     useEffect(() => {
         userValidation();
-    }, [location.pathname, userValidation,navigate]);
+    }, [location.pathname, userValidation, navigate]);
 
     if (validUser === null) {
         return <div>Loading...</div>;
     }
 
-     return (
+    return (
         <>
-            {children}
+            {React.Children.map(children, child => {
+                return React.cloneElement(child, { validUser });
+            })}
         </>
     );
 };

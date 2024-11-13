@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import AuthGuard from './components/authentication/userProtected';
 import Dashboard from './components/Dashboard';
+import Users from './components/users';
 
 const theme = createTheme({
   typography: {
@@ -37,6 +38,15 @@ const router = createBrowserRouter([
     path: "/login",
     element: (
       <Login />
+    )
+  },
+  {
+    path: "/user-register",
+    element: (
+      <AuthGuard>
+        <AppHeader />
+        <Users />
+      </AuthGuard>
     )
   }
 ])

@@ -26,7 +26,7 @@ export const useProgressToast = () => {
         toast.update(toastId, {
             render: (
                 <div>
-                    <p style={{ margin: '0',display:'flex' }}>{message}{newProgress !== 'loader' ? `... ${Math.round(newProgress)}%` :<Loader />}</p>
+                    <div style={{ margin: '0',display:'flex' }}>{message}{newProgress !== 'loader' ? `... ${Math.round(newProgress)}%` :<Loader />}</div>
                     {newProgress !== 'loader' ? <LinearProgress variant="determinate" value={newProgress} style={{ width: '100%', position: "absolute", bottom: 0 ,left:'0px'}} /> : ''}
                 </div>
             )

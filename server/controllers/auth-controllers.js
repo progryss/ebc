@@ -14,8 +14,10 @@ const userRegister = async (req, res) => {
             return res.status(409).send("User already exists");
         }
         const newUser = new User({
+            name: req.body.name,
+            email: req.body.email,
             password: req.body.password,
-            email: req.body.email
+            role: req.body.role
         });
         await newUser.save();
         return res.status(200).send("User registered")
@@ -40,7 +42,7 @@ const userLogin = async (req, res) => {
                     expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
                     httpOnly: true,
                     sameSite: "Lax",
-                    secure: false
+                    secure: true
                 });
                 return res.status(200).send({ userValid })
             }
@@ -84,7 +86,58 @@ const updatePassword = async (req, res) => {
     }
 };
 
+const updateUser = async (req, res) => {
+    const {_id,name,email,newPassword} = req.body;
+    const data = {}
+    data._id = _id
+    if(name) data.name = name
+    if(email) data.email = email
 
+    try {
+        if (newPassword) {
+            data.password = await bcrypt.hash(newPassword, 12);
+        }
+        const updateUser = await User.findByIdAndUpdate( 
+            data._id,
+            { $set: data},
+            { new: true, runValidators: true }
+        )
+        if (!updateUser) {
+            return res.status(404).send('user not found');
+        }
+        res.status(200).send('User updated successfully');
+    } catch (error) {
+        res.status(500).send('error in updating user', error)
+    }
+}
+
+const getUsers = async (req, res) => {
+    try {
+        const response = await User.find();
+        if (!response) {
+            return res.status(401).send('no user found')
+        }
+        res.status(200).send(response)
+    } catch (error) {
+        console.log('errer in getting user', error)
+        res.status(500).send(error)
+    }
+}
+
+const deleteUser = async (req,res)=>{
+    const email = req.body.email
+    console.log(email)
+    try {
+        const user = await User.findOneAndDelete({email:email});
+        if(!user){
+            return res.status(404).send('user not found')
+        }
+        res.status(200).send('User deleted successfully')
+    } catch (error) {
+        console.log('error in deleting user')
+        res.status(500).send('error deleting user',error)
+    }
+}
 
 const syncProductFromShopify = async (req, res) => {
     try {
@@ -278,14 +331,44 @@ const deleteCsvData = async (req, res) => {
 };
 
 const getCsvData = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100;  // Default and maximum rows per page
+    const skip = (page - 1) * limit;
+    const search = req.query.search;
+    // Build the query object
+    let query = {};
+    if (search) {
+        query = {
+            $or: [
+                { make: new RegExp(search, 'i') },
+                { model: new RegExp(search, 'i') },
+                { engineType: new RegExp(search, 'i') },
+                // You can add more fields to search in:
+                { sku: new RegExp(search, 'i') }
+            ]
+        };
+    }
     try {
-        const csvData = await CsvData.find();
-        res.status(200).send(csvData)
+        // Find documents based on the query
+        const csvData = await CsvData.find(query)
+            .skip(skip)
+            .limit(limit);
+
+        // Count only the documents that match the query
+        const total = await CsvData.countDocuments(query);
+
+        res.status(200).send({
+            total,
+            data: csvData,
+            page,
+            totalPages: Math.ceil(total / limit)
+        });
     } catch (error) {
         console.error('Error fetching csv data:', error);
         res.status(500).json({ error: 'Failed to fetch csv data' });
     }
-}
+};
+
 
 const getCsvDataMakes = async (req, res) => {
     try {
@@ -566,6 +649,7 @@ module.exports = {
     userRegister,
     logoutUser,
     updatePassword,
+    getUsers,
     syncProductFromShopify,
     deleteProductFromDb,
     uploadCsvData,
@@ -581,5 +665,7 @@ module.exports = {
     deleteMultipleRows,
     updateRow,
     addRow,
-    progress
+    progress,
+    updateUser,
+    deleteUser
 }; 

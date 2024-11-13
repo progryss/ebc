@@ -11,6 +11,9 @@ router.post('/user-login',Controler.userLogin);
 router.get('/validate-user',authenticate,Controler.validateUser);
 router.post('/logout',authenticate,Controler.logoutUser);
 router.put('/change-password',authenticate,Controler.updatePassword);
+router.get('/get-users',Controler.getUsers)
+router.put('/update-user',Controler.updateUser)
+router.post('/delete-user',Controler.deleteUser)
 
 
 router.post('/upload-csv',upload.single('csvFile'),Controler.uploadCsvData);

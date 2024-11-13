@@ -1,7 +1,6 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import FormLabel from '@mui/material/FormLabel';
 import FormControl from '@mui/material/FormControl';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -81,6 +80,8 @@ const theme = createTheme({
     },
 });
 
+const serverUrl = process.env.REACT_APP_SERVER_URL;
+
 export default function PasswordChange(props) {
     const [password, setPassword] = useState('');
     const [passwordError, setPasswordError] = useState(false);
@@ -92,7 +93,6 @@ export default function PasswordChange(props) {
     const [showPassword, setShowPassword] = useState(false);
     const [showconfirmPassword, setShowconfirmPassword] = useState(false);
 
-    const serverUrl = process.env.REACT_APP_SERVER_URL;
 
     const navigate = useNavigate();
 
@@ -116,13 +116,11 @@ export default function PasswordChange(props) {
                 const status = res ? res.status : 500;
 
                 if (status === 200) {
-                    toast.success("Password changed successfully")
+                    toast.success("Password successfully changed")
                     setTimeout(() => {
                         navigate("/", { replace: true });
                     }, 700)
                 }
-
-                console.log(data ? "Password changed" : "Password Not changed")
                 resetForm();
             } catch (error) {
                 console.log(error, "Change Password API Error");
@@ -187,14 +185,14 @@ export default function PasswordChange(props) {
                 autoClose={600}
                 theme="light"
             />
-            <ThemeProvider theme={theme}>
+        
                 <Card variant="outlined">
                     <Typography
                         component="h1"
                         variant="h4"
                         sx={{ width: '100%', fontSize: { xs: '24px', md: '28px' } }}
                     >
-                        Change Your Password <LockPersonRoundedIcon />
+                        Set New Password <LockPersonRoundedIcon />
                     </Typography>
                     <Box
                         component="form"
@@ -208,14 +206,11 @@ export default function PasswordChange(props) {
                         }}
                     >
                         <FormControl>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <FormLabel htmlFor="password" sx={{ marginBottom: '10px' }}>Password</FormLabel>
-                            </Box>
                             <TextField
                                 error={passwordError}
                                 helperText={passwordErrorMessage}
                                 name="password"
-                                placeholder="••••••"
+                                label="New password"
                                 type={showPassword ? 'text' : 'password'}
                                 id="password"
                                 autoComplete="current-password"
@@ -243,15 +238,12 @@ export default function PasswordChange(props) {
                         </FormControl>
 
                         <FormControl>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <FormLabel htmlFor="confirm password" sx={{ marginBottom: '10px' }}>Confirm Password</FormLabel>
-                            </Box>
                             <TextField
                                 error={confirmPasswordError}
                                 helperText={confirmPasswordErrorMessage}
                                 type={showconfirmPassword ? 'text' : 'password'}
                                 name="confirm_password"
-                                placeholder="••••••"
+                                label="Confirm New Password"
                                 id="confirm_password"
                                 autoComplete="current-password"
                                 autoFocus
@@ -283,12 +275,12 @@ export default function PasswordChange(props) {
                             variant="contained"
                             sx={{ backgroundColor: "black" }}
                         >
-                            Submit
+                            Change Password
                         </Button>
                         <Typography variant='body1' color='#d32f2f' textAlign="center" component={'span'}>{apiError}</Typography>
                     </Box>
                 </Card>
-            </ThemeProvider>
+       
         </SignInContainer>
     );
 }

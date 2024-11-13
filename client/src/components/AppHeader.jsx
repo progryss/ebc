@@ -2,8 +2,7 @@ import React from 'react';
 import Box from '@mui/material/Box';
 import CustomizedMenus from './Select.components';
 // import logo from '../images/ickle.png';
-function AppHeader() {
-
+function AppHeader({validUser}) {
     
     const headerWrapperCss = {
         display: 'flex',
@@ -12,13 +11,12 @@ function AppHeader() {
         borderBottom: '1px solid silver',
         padding: '10px'
     };
-    
     return (
         <>
             <Box className='header' sx={headerWrapperCss}>
                 {/* <img src={logo} alt='' width='180' /> */}
                 <div><h3>EBC Brakes</h3></div>
-                <CustomizedMenus/>
+                <CustomizedMenus user={validUser}/>
             </Box>
         </>
     )
