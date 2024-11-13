@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import LockPersonRoundedIcon from '@mui/icons-material/LockPersonRounded';
-import { ToastContainer, toast } from 'react-toastify';
+import { useProgressToast } from '../customHooks/useProgressToast';
 import 'react-toastify/dist/ReactToastify.css';
 import { IconButton, InputAdornment } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
@@ -93,7 +93,7 @@ export default function PasswordChange(props) {
     const [showPassword, setShowPassword] = useState(false);
     const [showconfirmPassword, setShowconfirmPassword] = useState(false);
 
-
+    const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
     const navigate = useNavigate();
 
     const handleSubmit = async (event) => {
@@ -104,6 +104,8 @@ export default function PasswordChange(props) {
         };
 
         if (validateInputs()) {
+            const toastId = showProgressToast('Processing');
+            updateProgress(toastId, 'loader', 'Processing');
             try {
                 const res = await axios.put(`${serverUrl}/api/change-password`, changedPass, {
                     headers: {
@@ -116,7 +118,7 @@ export default function PasswordChange(props) {
                 const status = res ? res.status : 500;
 
                 if (status === 200) {
-                    toast.success("Password successfully changed")
+                    finalizeToast(toastId, true, "Password changed");
                     setTimeout(() => {
                         navigate("/", { replace: true });
                     }, 700)
@@ -125,6 +127,7 @@ export default function PasswordChange(props) {
             } catch (error) {
                 console.log(error, "Change Password API Error");
                 setApiError("Cannot change Password now due to server error");
+                finalizeToast(toastId, false, "Error in change password!");
             }
         }
     };
@@ -180,12 +183,7 @@ export default function PasswordChange(props) {
 
     return (
         <SignInContainer direction="column" justifyContent="space-between" height="100vh" sx={{ backgroundColor: "whitesmoke" }} >
-            <ToastContainer
-                position="top-right"
-                autoClose={600}
-                theme="light"
-            />
-        
+            <ThemeProvider theme={theme}>
                 <Card variant="outlined">
                     <Typography
                         component="h1"
@@ -210,7 +208,7 @@ export default function PasswordChange(props) {
                                 error={passwordError}
                                 helperText={passwordErrorMessage}
                                 name="password"
-                                label="New password"
+                                placeholder="New password"
                                 type={showPassword ? 'text' : 'password'}
                                 id="password"
                                 autoComplete="current-password"
@@ -243,7 +241,7 @@ export default function PasswordChange(props) {
                                 helperText={confirmPasswordErrorMessage}
                                 type={showconfirmPassword ? 'text' : 'password'}
                                 name="confirm_password"
-                                label="Confirm New Password"
+                                placeholder="Confirm New Password"
                                 id="confirm_password"
                                 autoComplete="current-password"
                                 autoFocus
@@ -280,7 +278,7 @@ export default function PasswordChange(props) {
                         <Typography variant='body1' color='#d32f2f' textAlign="center" component={'span'}>{apiError}</Typography>
                     </Box>
                 </Card>
-       
+            </ThemeProvider>
         </SignInContainer>
     );
 }

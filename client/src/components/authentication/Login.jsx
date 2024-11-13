@@ -1,7 +1,6 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import FormLabel from '@mui/material/FormLabel';
 import FormControl from '@mui/material/FormControl';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -16,7 +15,7 @@ import { IconButton, InputAdornment } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 // import logo from '../../images/ickle.png';
-import { ToastContainer, toast } from 'react-toastify';
+import { useProgressToast } from '../customHooks/useProgressToast';
 
 const serverUrl = process.env.REACT_APP_SERVER_URL;
 
@@ -84,6 +83,8 @@ const theme = createTheme({
 });
 
 export default function Login(props) {
+  const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState(false);
@@ -105,6 +106,8 @@ export default function Login(props) {
     };
 
     if (validateInputs()) {
+      const toastId = showProgressToast('User login...');
+      updateProgress(toastId, 'loader', 'User login');
       try {
         const response = await axios.post(`${serverUrl}/api/user-login`, formData, {
           headers: {
@@ -115,14 +118,15 @@ export default function Login(props) {
         )
         resetForm();
         if (response.status === 200) {
-          toast.success('Logged In Successfully');
           setTimeout(() => {
             navigate("/");
+            finalizeToast(toastId, true, "User Logged In Successfully.");
           }, 700)
         }
       } catch (error) {
         console.log(error, "Login API Error");
         setLoginErr("Invalid credentials email and password");
+        finalizeToast(toastId, false, "Error in user logged in!");
       }
 
     }
@@ -170,12 +174,6 @@ export default function Login(props) {
 
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={600}
-        theme="light"
-      />
-
       <SignInContainer direction="column" justifyContent="space-between" height="100vh" >
         <ThemeProvider theme={theme}>
           <Card variant="outlined">
