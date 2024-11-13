@@ -9,8 +9,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import HomeIcon from '@mui/icons-material/Home';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useNavigate } from 'react-router-dom';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { useProgressToast } from './customHooks/useProgressToast';
 import axios from 'axios';
 
 const serverUrl = process.env.REACT_APP_SERVER_URL;
@@ -59,6 +58,8 @@ const StyledMenu = styled((props) => (
 }));
 
 export default function CustomizedMenus({ user }) {
+
+  const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const navigate = useNavigate();
   const open = Boolean(anchorEl);
@@ -71,15 +72,17 @@ export default function CustomizedMenus({ user }) {
   };
 
   const handleLogout = async () => {
+    const toastId = showProgressToast('Processing');
+    updateProgress(toastId, 'loader', 'Processing');
     try {
       await axios.post(`${serverUrl}/api/logout`, {}, { withCredentials: true });
-      toast.warn('Logged Out Successfully');
       setTimeout(() => {
+        finalizeToast(toastId, true, "Logged Out Successfully");
         window.location.href = '/login';
       }, 1000);
     } catch (error) {
       console.error('Logout Error:', error);
-      toast.error('Error logging out. Please try again.');
+      finalizeToast(toastId, true, "Error in logging out!");
     }
   };
 
@@ -93,7 +96,7 @@ export default function CustomizedMenus({ user }) {
     setAnchorEl(null);
   };
 
-  const goToDash = ()=>{
+  const goToDash = () => {
     navigate('/');
     setAnchorEl(null);
   }

@@ -1,4 +1,4 @@
-import React,{useState} from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import CloseIcon from '@mui/icons-material/Close';
 import Box from '@mui/material/Box';
@@ -28,10 +28,10 @@ const AddUser = React.forwardRef(({ refresh, close }, ref) => {
         const formData = new FormData(event.target);
         const payload = Object.fromEntries(formData.entries());
         payload.role = false; // Assuming 'role' is a boolean field in your user schema
-        const toastId = showProgressToast('Creating User');
-        updateProgress(toastId, 'loader', 'Creating User');
+
         if (validateInputs()) {
-          
+            const toastId = showProgressToast('Creating User');
+            updateProgress(toastId, 'loader', 'Creating User');
             try {
                 const response = await axios.post(`${serverUrl}/api/user-register`, payload, {
                     headers: { "Content-Type": "application/json" }
