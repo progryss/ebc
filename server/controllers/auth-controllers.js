@@ -14,8 +14,10 @@ const userRegister = async (req, res) => {
             return res.status(409).send("User already exists");
         }
         const newUser = new User({
+            name: req.body.name,
+            email: req.body.email,
             password: req.body.password,
-            email: req.body.email
+            role: req.body.role
         });
         await newUser.save();
         return res.status(200).send("User registered")
@@ -40,7 +42,7 @@ const userLogin = async (req, res) => {
                     expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
                     httpOnly: true,
                     sameSite: "Lax",
-                    secure: false
+                    secure: true
                 });
                 return res.status(200).send({ userValid })
             }
@@ -84,7 +86,58 @@ const updatePassword = async (req, res) => {
     }
 };
 
+const updateUser = async (req, res) => {
+    const {_id,name,email,newPassword} = req.body;
+    const data = {}
+    data._id = _id
+    if(name) data.name = name
+    if(email) data.email = email
 
+    try {
+        if (newPassword) {
+            data.password = await bcrypt.hash(newPassword, 12);
+        }
+        const updateUser = await User.findByIdAndUpdate( 
+            data._id,
+            { $set: data},
+            { new: true, runValidators: true }
+        )
+        if (!updateUser) {
+            return res.status(404).send('user not found');
+        }
+        res.status(200).send('User updated successfully');
+    } catch (error) {
+        res.status(500).send('error in updating user', error)
+    }
+}
+
+const getUsers = async (req, res) => {
+    try {
+        const response = await User.find();
+        if (!response) {
+            return res.status(401).send('no user found')
+        }
+        res.status(200).send(response)
+    } catch (error) {
+        console.log('errer in getting user', error)
+        res.status(500).send(error)
+    }
+}
+
+const deleteUser = async (req,res)=>{
+    const email = req.body.email
+    console.log(email)
+    try {
+        const user = await User.findOneAndDelete({email:email});
+        if(!user){
+            return res.status(404).send('user not found')
+        }
+        res.status(200).send('User deleted successfully')
+    } catch (error) {
+        console.log('error in deleting user')
+        res.status(500).send('error deleting user',error)
+    }
+}
 
 const syncProductFromShopify = async (req, res) => {
     try {
@@ -159,10 +212,12 @@ async function insertBatch(batch, batchNumber) {
     console.log(`Batch ${batchNumber} inserted successfully.`);
 }
 const BATCH_SIZE = 10000;
+let batchNumber = 0;
+let totalRecords = 0;
+
 // function to save csv product to db in batch
 async function processCsvFile(filePath) {
     let batch = []; // Array to hold the batch
-    let batchNumber = 0;
 
     const stream = fs.createReadStream(filePath);
     const csvStream = csv.parse({ headers: true })
@@ -215,10 +270,30 @@ async function processCsvFile(filePath) {
     stream.pipe(csvStream);
 }
 
+async function countCsvRows(filePath) {
+    return new Promise((resolve, reject) => {
+        let rowCount = 0;
+        fs.createReadStream(filePath)
+            .pipe(csv.parse({ headers: true }))  // Parse CSV with headers
+            .on('data', (row) => {
+                rowCount++;
+            })
+            .on('end', () => {
+                console.log(`Total batches: ${rowCount / 10000}`);
+                resolve(rowCount);
+            })
+            .on('error', reject);  // Handle any errors
+    });
+}
+
 const uploadCsvData = async (req, res) => {
+    batchNumber = 0;
+    totalRecords = 0;
     if (!req.file) {
         return res.status(400).send('No file uploaded.');
     }
+
+    totalRecords = await countCsvRows(req.file.path);
     try {
         // Assume a function processCsvFile that processes your CSV file
         await processCsvFile(req.file.path);
@@ -228,6 +303,22 @@ const uploadCsvData = async (req, res) => {
         res.status(500).send('Error uploading csv');
     }
 };
+
+const progress = async (req, res) => {
+
+    if (totalRecords > 0) {
+        res.json({
+            status: 'processing',
+            progress: batchNumber,
+            total: totalRecords / 10000
+        });
+    } else {
+        res.json({
+            status: 'complete',
+            progress: totalRecords
+        });
+    }
+}
 
 const deleteCsvData = async (req, res) => {
     try {
@@ -240,14 +331,44 @@ const deleteCsvData = async (req, res) => {
 };
 
 const getCsvData = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100;  // Default and maximum rows per page
+    const skip = (page - 1) * limit;
+    const search = req.query.search;
+    // Build the query object
+    let query = {};
+    if (search) {
+        query = {
+            $or: [
+                { make: new RegExp(search, 'i') },
+                { model: new RegExp(search, 'i') },
+                { engineType: new RegExp(search, 'i') },
+                // You can add more fields to search in:
+                { sku: new RegExp(search, 'i') }
+            ]
+        };
+    }
     try {
-        const csvData = await CsvData.find();
-        res.status(200).send(csvData)
+        // Find documents based on the query
+        const csvData = await CsvData.find(query)
+            .skip(skip)
+            .limit(limit);
+
+        // Count only the documents that match the query
+        const total = await CsvData.countDocuments(query);
+
+        res.status(200).send({
+            total,
+            data: csvData,
+            page,
+            totalPages: Math.ceil(total / limit)
+        });
     } catch (error) {
         console.error('Error fetching csv data:', error);
         res.status(500).json({ error: 'Failed to fetch csv data' });
     }
-}
+};
+
 
 const getCsvDataMakes = async (req, res) => {
     try {
@@ -348,7 +469,7 @@ const getRealTimeInventoryStatus = async (variantId) => {
             }
         });
         const realTimeVariantData = response.data.variant;
-        return realTimeVariantData ;
+        return realTimeVariantData;
 
     } catch (error) {
         console.error('Error fetching real-time inventory status:', error);
@@ -407,7 +528,7 @@ const getCsvDataSkus = async (req, res) => {
 
         // Perform aggregation to get unique SKUs for the selected dropdown values
         const uniqueSKUs = await CsvData.aggregate([
-            { $match: { model: selectedModel, make: selectedMake, year: selectedYear, engineType: selectedEngineType } }, 
+            { $match: { model: selectedModel, make: selectedMake, year: selectedYear, engineType: selectedEngineType } },
             { $group: { _id: "$sku" } },
             { $project: { _id: 0, sku: "$_id" } }
         ]);
@@ -465,13 +586,13 @@ const deleteMultipleRows = async (req, res) => {
     }
 }
 
-const updateRow = async (req,res)=>{
+const updateRow = async (req, res) => {
     try {
         const data = req.body;
         const updatedRow = await CsvData.findByIdAndUpdate(
             data._id,
             {
-                $set:{
+                $set: {
                     make: data.make,
                     model: data.model,
                     year: data.year,
@@ -497,27 +618,27 @@ const updateRow = async (req,res)=>{
     }
 }
 
-const addRow = async (req,res) => {
+const addRow = async (req, res) => {
     const data = req.body;
     try {
         const newRow = new CsvData({
-            make:data.make,
-            model:data.model,
-            year:getYearsInRange(data.startYear, data.endYear),
-            engineType:data.engineType,
-            sku:data.sku,
-            bhp:data.bhp,
-            caliper:data.caliper,
-            discDiameter:data.discDiameter,
-            included:data.included.split(','),
-            carEnd:data.carEnd
+            make: data.make,
+            model: data.model,
+            year: getYearsInRange(data.startYear, data.endYear),
+            engineType: data.engineType,
+            sku: data.sku,
+            bhp: data.bhp,
+            caliper: data.caliper,
+            discDiameter: data.discDiameter,
+            included: data.included.split(','),
+            carEnd: data.carEnd
         });
 
         await newRow.save()
         return res.status(201).send('new row added')
-        
+
     } catch (error) {
-        console.log('error in adding new row data',error)
+        console.log('error in adding new row data', error)
         return res.status(500).send('error in adding new row data')
     }
 }
@@ -528,6 +649,7 @@ module.exports = {
     userRegister,
     logoutUser,
     updatePassword,
+    getUsers,
     syncProductFromShopify,
     deleteProductFromDb,
     uploadCsvData,
@@ -542,5 +664,8 @@ module.exports = {
     getProductsBySkus,
     deleteMultipleRows,
     updateRow,
-    addRow
+    addRow,
+    progress,
+    updateUser,
+    deleteUser
 }; 

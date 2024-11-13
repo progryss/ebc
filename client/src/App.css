@@ -229,8 +229,7 @@
   
   .searchParentWrapper {
     display: grid;
-    grid-template-columns: 1fr 4fr;
-    gap: 10px;
+    grid-template-columns: 1fr auto;
   }
   
   

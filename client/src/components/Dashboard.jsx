@@ -3,14 +3,23 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { ResizableBox } from "react-resizable";
 import "react-resizable/css/styles.css";
 import RowDetails from "./rowDetails";
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ToastContainer} from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import Button from '@mui/material/Button';
 import Modal from '@mui/material/Modal';
 import AddRow from "./addRow";
+import { useProgressToast } from "./customHooks/useProgressToast";
+const serverUrl = process.env.REACT_APP_SERVER_URL;
+
+const rowsPerPage = 100;
 
 export default function Dashboard() {
+
+  const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
+  const navigate = useNavigate();
+
   const [columns, setColumns] = useState([]);
   const [data, setData] = useState([]);
   const [filteredResults, setFilteredResults] = useState([]);
@@ -19,13 +28,14 @@ export default function Dashboard() {
   const [selectedRows, setSelectedRows] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage] = useState(100);
   const [columnWidths, setColumnWidths] = useState({});
   const [rowPopop, setRowPopop] = useState(null);
   const [trigerUseeffectByDelete, setTrigerUseeffectByDelete] = useState(false);
   const tableHeaderRef = useRef(null);
   const [file, setFile] = useState(null);
   const [refreshData, setRefreshData] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRows, setTotalRows] = useState(1);
 
   const [modelOpen, setModelOpen] = React.useState(false);
   const handleCloseModel = () => setModelOpen(false);
@@ -33,51 +43,25 @@ export default function Dashboard() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const gettingOptions = JSON.parse(localStorage.getItem('filterOptions'))
-  const navigate = useNavigate();
-  const opt = {
-    relationship: "null",
-    filterMonth: "null",
-    dateFrom: "",
-    dateTo: ""
-  }
-  const [filterOptions, setFilterOptions] = useState(gettingOptions || opt);
-
-  const searchItems = (searchValue) => {
-    if (searchValue !== '') {
-      const filteredData = data.filter((item) => {
-        return (
-          item?.make?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
-          item?.model?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
-          // item?.year?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
-          item?.engineType?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
-          item?.sku?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
-          item?.bhp?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
-          item?.caliper?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
-          item?.discDiameter?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
-          item?.carEnd?.toLowerCase()?.includes(searchValue?.toLowerCase())
-        );
-      });
-      setFilteredResults(filteredData);
-    } else {
-      setFilteredResults(data);
-    }
-    setCurrentPage(1);
-  };
-
-  const serverUrl = process.env.REACT_APP_SERVER_URL;
+  const [searchString, setSearchString] = useState('')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
-    function hit() {
-      fetch(`${serverUrl}/api/csv-data`, {
-        method: 'GET',
-        headers: {
-          "Content-Type": 'application/json'
-        },
-        credentials: 'include'
-      })
-        .then(response => response?.json())
-        .then(data => {
+    async function fetchCsvData(page) {
+      const url = `${serverUrl}/api/csv-data?page=${page}&limit=${rowsPerPage}&search=${search}`;
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            "Content-Type": 'application/json'
+          },
+          credentials: 'include'
+        });
+        const json = await response.json();
+        if (response.ok) {
+          const data = json.data;
+          setTotalPages(json.totalPages);
+          setTotalRows(json.total)
           if (data.length > 0) {
             const keys = Object.keys(data[0])?.filter(key => key !== '_id' && key !== '__v');
             const initialColumns = [
@@ -110,40 +94,22 @@ export default function Dashboard() {
             const enrichedData = [...rowData]?.reverse();
             setData(enrichedData);
             setFilteredResults(enrichedData);
-            setSelectAll(!selectAll);
+            setSelectAll(false);
           }
-        })
-        .catch((err) => {
-          console.log(err, "Error in Getting Members");
-          navigate('/login');
-
-        })
+        }
+      } catch (err) {
+        console.log(err, "Error in Getting Members");
+        navigate('/login');
+      }
       const savedWidths = JSON.parse(localStorage.getItem('columnWidths'));
       if (savedWidths) {
         setColumnWidths(savedWidths);
       }
     }
-    hit()
-  }, [rowPopop, trigerUseeffectByDelete, refreshData]);
+    fetchCsvData(currentPage);
+  }, [currentPage, navigate, rowPopop, trigerUseeffectByDelete, refreshData, search]);
 
-  useEffect(() => {
-    const filteredData = data.filter((item) => {
-      const dueDate = new Date(item.dueDate * 1000);
-      const fromCondition = filterOptions?.dateFrom ? dueDate >= new Date(filterOptions?.dateFrom) : true;
-      const toDateCondition = filterOptions?.dateTo ? dueDate <= new Date(filterOptions?.dateTo) : true;
-      const relationshipCondition = filterOptions?.relationship !== "null" ? item.relationship === filterOptions?.relationship : true;
-      const monthYearCondition = filterOptions?.filterMonth !== "null" ? compareMonthYear(item.dueDate, filterOptions?.filterMonth) : true;
-
-      return fromCondition && relationshipCondition && toDateCondition && monthYearCondition === true;
-    });
-    setFilteredResults(filteredData)
-    localStorage.setItem('filterOptions', JSON.stringify(filterOptions))
-  }, [filterOptions, data])
-
-  useEffect(() => {
-
-  }, [filteredResults])
-
+  // column drag
   const onDragEnd = (result) => {
     if (!result.destination) return;
     const updatedColumns = Array.from(columns);
@@ -155,6 +121,7 @@ export default function Dashboard() {
     localStorage.setItem('columns', JSON.stringify(updatedColumns));
   };
 
+  // column toggle in sheet
   const handleToggleColumn = (key) => {
     const columnExists = columns?.find(column => column.id === key);
     let updatedColumns;
@@ -172,6 +139,7 @@ export default function Dashboard() {
     return !isNaN(Date.parse(value));
   };
 
+  // sheet row short
   const handleSort = (columnId) => {
     let direction = 'ascending';
     if (sortConfig.key === columnId && sortConfig.direction === 'ascending') {
@@ -199,64 +167,10 @@ export default function Dashboard() {
     });
 
     setData(sortedData);
-    setFilteredResults(sortedData); // Update filteredResults with sorted data
+    setFilteredResults(sortedData);
   };
 
-  const indexOfLastRow = currentPage * rowsPerPage;
-  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = filteredResults?.slice(indexOfFirstRow, indexOfLastRow);
-  const totalPages = Math.ceil(filteredResults.length / rowsPerPage);
-
-  const handlePrevPage = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
-    window.scrollTo({
-      top: tableHeaderRef.current.offsetTop,
-      behavior: 'smooth',
-    });
-  };
-
-  const handleNextPage = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-    window.scrollTo({
-      top: tableHeaderRef.current.offsetTop,
-      behavior: 'smooth',
-    });
-  };
-
-  const getPageNumbers = () => {
-    const totalPageNumbersToShow = 3; // Number of page numbers to display
-    const totalPageNumbers = totalPages;
-    const current = currentPage;
-
-    const pageNumbers = [];
-
-    // Always show the first page
-    pageNumbers.push(1);
-
-    if (current > 3) {
-      pageNumbers.push('...');
-    }
-
-    // Calculate start and end page numbers
-    const startPage = Math.max(2, current - 1);
-    const endPage = Math.min(totalPages - 1, current + 1);
-
-    for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(i);
-    }
-
-    if (current < totalPages - 2) {
-      pageNumbers.push('...');
-    }
-
-    // Always show the last page if there are more than one page
-    if (totalPages > 1) {
-      pageNumbers.push(totalPages);
-    }
-
-    return pageNumbers;
-  };
-
+  // column resize 
   const handleResize = (columnId, width) => {
     const updatedWidths = {
       ...columnWidths,
@@ -269,7 +183,7 @@ export default function Dashboard() {
   const handleSelectAll = () => {
     const newSelectAll = !selectAll;
     setSelectAll(newSelectAll);
-    setSelectedRows(newSelectAll ? data.map((row) => row._id) : []);
+    setSelectedRows(newSelectAll ? filteredResults.map((row) => row._id) : []);
   };
 
   const handleSelectRow = (id) => {
@@ -280,33 +194,30 @@ export default function Dashboard() {
     setSelectAll(newSelectedRows.length === data.length);
   };
 
-  function compareMonthYear(itemDate, monthYearStr) {
-    const date = new Date(itemDate * 1000);
-    const [month, year] = monthYearStr.split('_');
-    const monthIndex = new Date(`${month} 1, 2022`).getMonth();
-    return date.getFullYear() === parseInt(year) && date.getMonth() === monthIndex;
-  }
-
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
-
   const deleteRowFromTable = async () => {
     // console.log(selectedRows);
-    let userResponseText = selectedRows.length === 0 ? "No data Selected" : `Are you sure you want to delete ${selectedRows.length} Enquiries?`;
+    let userResponseText = selectedRows.length === 0 ? "No data Selected" : `Are you sure you want to delete ${selectedRows.length} Rows ?`;
     const userResponse = window.confirm(userResponseText);
     if (userResponse) {
+      const toastId = showProgressToast(`Deleting ${selectedRows.length} rows`);
+      updateProgress(toastId, 'loader', `Deleting ${selectedRows.length} rows`);
       try {
-        const response = await axios.delete(`${serverUrl}/api/delete-rows`, {
+        await axios.delete(`${serverUrl}/api/delete-rows`, {
           headers: {
             'Content-Type': 'application/json'
           },
           data: { ids: selectedRows }
         });
+        setSelectAll(false)
         setTrigerUseeffectByDelete(!trigerUseeffectByDelete)
+        finalizeToast(toastId, true, `${selectedRows.length} rows deleted Successfully`);
       } catch (error) {
         console.error('Error:', error);
+        finalizeToast(toastId, false, `Error in deleting selected rows `);
       }
     }
     setSelectedRows([])
@@ -341,6 +252,29 @@ export default function Dashboard() {
 
   const fileInputRef = React.useRef();
 
+  function updateProgressBar(toastId) {
+    const progressInterval = setInterval(async () => {
+      const response = await fetch(`${serverUrl}/api/upload/progress`);
+      const data = await response.json();
+
+      if (!data.total) { // Ensure total is not zero or undefined to avoid division by zero
+        console.error('Total number of records is zero or not defined.');
+        clearInterval(progressInterval);
+        finalizeToast(toastId, false, "Failed to fetch progress");
+        return;
+      }
+
+      const percentage = (data.progress / data.total) * 100;
+      setProgress(percentage);
+      updateProgress(toastId, percentage, 'Uploading CSV');
+      if (percentage >= 100) {
+        clearInterval(progressInterval);
+        finalizeToast(toastId, true, `${data.total} Records uploaded !`);
+        setTrigerUseeffectByDelete(!trigerUseeffectByDelete)
+      }
+    }, 500);
+  }
+
   const handleUploadCsv = async () => {
     if (!file) {
       alert('Please select a file first!');
@@ -350,6 +284,9 @@ export default function Dashboard() {
     const formData = new FormData();
     formData.append('csvFile', file);
 
+    setProgress(0);  // Reset progress at the start
+    const toastId = showProgressToast('Uploading CSV');
+
     try {
       const response = await fetch(`${serverUrl}/api/upload-csv`, {
         method: 'POST',
@@ -357,33 +294,36 @@ export default function Dashboard() {
       });
 
       if (response.ok) {
-        const result = await response.text();
-        alert(result);
+        updateProgressBar(toastId);
         setFile(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = ""; // Clear file input field
         }
-        setTrigerUseeffectByDelete(!trigerUseeffectByDelete)
       } else {
         const errorText = await response.text();
         throw new Error(`Failed to upload file: ${errorText}`);
       }
     } catch (error) {
+      finalizeToast(toastId, false, "Failed to upload CSV");
       console.error('Error uploading file:', error);
       alert('Error uploading file');
     }
   };
 
   const deleteCsvData = async () => {
+    const userResponse = window.confirm('Are you sure you want to delete?');
+    if (!userResponse) return;
+    const toastId = showProgressToast('Deleting Csv data');
+    updateProgress(toastId, 'loader', 'Deleting Csv data');
     try {
       await fetch(`${serverUrl}/api/delete-csv`, {
         method: 'POST'
       });
-      alert('CSV data deleted successfully');
       refreshIt()
+      finalizeToast(toastId, true, 'Csv Data Deleted.');
     } catch (error) {
       console.error('Error in deleting Csv data', error);
-      alert('Failed to delete Csv data.');
+      finalizeToast(toastId, false, 'Failed to delete Csv data.');
     }
   }
 
@@ -391,110 +331,124 @@ export default function Dashboard() {
     setRefreshData(!refreshData)
   }
 
+  // pagination buttons
+  const handlePrevPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+    window.scrollTo({
+      top: tableHeaderRef.current.offsetTop,
+      behavior: 'smooth',
+    });
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+    window.scrollTo({
+      top: tableHeaderRef.current.offsetTop,
+      behavior: 'smooth',
+    });
+  };
+
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    pageNumbers.push(1);
+    if (currentPage > 3) { pageNumbers.push('...') }
+    const startPage = Math.max(2, currentPage - 1);
+    const endPage = Math.min(totalPages - 1, currentPage + 1);
+    for (let i = startPage; i <= endPage; i++) { pageNumbers.push(i) }
+    if (currentPage < totalPages - 2) { pageNumbers.push('...') }
+    if (totalPages > 1) { pageNumbers.push(totalPages) }
+    return pageNumbers;
+  };
+
   return (
     <>
-     <ToastContainer position="top-right" hideProgressBar={true} />
-
-
       <div className="container-fluid customer-container">
         <div className="card card-block border-0 customer-table-css-main">
           <div className="card-body p-0">
             <div className="py-3 bg-light add-cutomer-section">
-              <div className="row">
-                <div className="col-lg-12">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div className="d-flex align-items-center gap-2">
-                      <span className="no-of-item">{filteredResults.length} Items</span>
-                    </div>
-                    <div className="searchParentWrapper">
-                      <div className="input-group">
-                        <input
-                          type="text"
-                          className="form-control bg-custom border-end-0 search-input"
-                          placeholder="Search"
-                          onChange={(e) => searchItems(e.target.value)}
-                        />
-                        <div className="input-group-append">
-                          <button
-                            className="btn border border-start-0 search-icon-custom"
-                            type="button"
-                            style={{ height: '100%' }}
-                          >
-                            <i className="fa fa-search"></i>
-                          </button>
-                        </div>
-                      </div>
-                      <div className="d-flex">
-                        <div>
-                          <input type="file" accept=".csv" onChange={handleFileChange} ref={fileInputRef} className="importCompany" />
-                          <button
-                            className="btn btn-primary"
-                            onClick={handleUploadCsv}
-                          >
-                            <i className="fas fa-file-export me-1"></i> Import CSV
-                          </button>
-                        </div>
-                        <button
-                          className="btn btn-primary ms-2"
-                          onClick={deleteCsvData}
-                        >
-                          <i className="fa fa-trash me-1"></i> Delete CSV
-                        </button>
-
-                        <button
-                          className="btn btn-primary ms-2"
-                          onClick={deleteRowFromTable}
-                        >
-                          <i className="fa fa-trash me-1"></i> Delete Row
-                        </button>
-                        <button
-                          className="btn btn-primary ms-2"
-                          onClick={syncProduct}
-                        >
-                          <i className="fas fa-sync me-1"></i> Sync Product
-                        </button>
-                        <button
-                          className="btn btn-primary ms-2"
-                          onClick={deleteProduct}
-                        >
-                          <i className="fa fa-trash me-1"></i> Delete Product
-                        </button>
-                        <div className="dropdown ms-2">
-                          <button
-                            className="btn btn-primary ml-3 dropdown-toggle text-nowrap"
-                            type="button"
-                            id="dropdownMenuButton"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                            style={{ height: '100%' }}
-                          >
-                            <i className="fas fa-plus me-2"></i> Add Column
-                          </button>
-                          <ul className="dropdown-menu addCol" aria-labelledby="dropdownMenuButton">
-                            {apiKeys.map((key) => (
-                              !["companyId", "locationId", "companyRoleId", "companyContactId"].includes(key) && ( // Only render if key is not "firstName"
-                                <li key={key}>
-                                  <label className="dropdown-item">
-                                    <input
-                                      type="checkbox"
-                                      onChange={() => handleToggleColumn(key)}
-                                      checked={columns.some(column => column.id === key)}
-                                    /> {key}
-                                  </label>
-                                </li>
-                              )
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
+              <div className="row searchParentWrapper">
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className="form-control bg-custom border-end-0 search-input"
+                    placeholder="Search"
+                    value={searchString}
+                    onChange={e => setSearchString(e.target.value)}
+                  />
+                  <div className="input-group-append">
+                    <button
+                      className="btn border search-icon-custom"
+                      type="button"
+                      style={{ height: '100%' }}
+                      onClick={() => setSearch(searchString)}
+                    >
+                      <i className="fa fa-search"></i>
+                    </button>
+                    <RefreshIcon sx={{cursor:'pointer',marginLeft:'10px'}} onClick={()=> {
+                      setSearch('');
+                      setSearchString('');
+                    }}/>
+                  </div>
+                </div>
+                <div className="d-flex">
+                  <div>
+                    <input type="file" accept=".csv" onChange={handleFileChange} ref={fileInputRef} className="importCompany" />
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleUploadCsv}
+                    >
+                      <i className="fas fa-file-export me-1"></i> Import CSV
+                    </button>
+                  </div>
+                  <button
+                    className="btn btn-primary ms-2"
+                    onClick={deleteCsvData}
+                  >
+                    <i className="fa fa-trash me-1"></i> Delete CSV
+                  </button>
+                  <button
+                    className="btn btn-primary ms-2"
+                    onClick={syncProduct}
+                  >
+                    <i className="fas fa-sync me-1"></i> Sync Product
+                  </button>
+                  <button
+                    className="btn btn-primary ms-2"
+                    onClick={deleteProduct}
+                  >
+                    <i className="fa fa-trash me-1"></i> Delete Product
+                  </button>
+                  <div className="dropdown ms-2">
+                    <button
+                      className="btn btn-primary ml-3 dropdown-toggle text-nowrap"
+                      type="button"
+                      id="dropdownMenuButton"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      style={{ height: '100%' }}
+                    >
+                      <i className="fas fa-plus me-2"></i> Add Column
+                    </button>
+                    <ul className="dropdown-menu addCol" aria-labelledby="dropdownMenuButton">
+                      {apiKeys.map((key) => (
+                        <li key={key}>
+                          <label className="dropdown-item">
+                            <input
+                              type="checkbox"
+                              onChange={() => handleToggleColumn(key)}
+                              checked={columns.some(column => column.id === key)}
+                            /> {key}
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </div>
             </div>
 
             <div>
-              <Button variant="contained" onClick={handleOpen} className="mb-3">Add Row</Button>
+              <Button variant="contained" onClick={handleOpen} className="mb-3 me-2">Add Row</Button>
               <Modal
                 open={open}
                 onClose={handleClose}
@@ -505,6 +459,7 @@ export default function Dashboard() {
                   <AddRow refresh={refreshIt} close={handleClose} />
                 </div>
               </Modal>
+              <Button variant="contained" onClick={deleteRowFromTable} className="mb-3"><i className="fa fa-trash me-1"></i> Delete Rows</Button>
             </div>
 
             <div className="table-responsive customerTable">
@@ -568,8 +523,8 @@ export default function Dashboard() {
                     </Droppable>
                   </thead>
                   <tbody>
-                    {currentRows.length > 0 ? (
-                      currentRows.map((row, rowIndex) => (
+                    {filteredResults.length > 0 ? (
+                      filteredResults.map((row, rowIndex) => (
                         <tr
                           key={`row-${rowIndex}`}
                           onClick={(e) => {
@@ -582,10 +537,10 @@ export default function Dashboard() {
                           }}
                           style={{ cursor: "pointer" }}
                         >
-                          {columns.map((column,index) => {
+                          {columns.map((column, index) => {
                             if (column.id === 'serialNumber') {
                               return (
-                                <td key={`row-${index}`}>{indexOfFirstRow + rowIndex + 1}</td>
+                                <td key={`row-${index}`}>{currentPage * rowsPerPage - rowsPerPage + rowIndex + 1}</td>
                               );
                             } else if (column.id === 'selectAll') {
                               return (
@@ -627,7 +582,8 @@ export default function Dashboard() {
 
             {/* pagination */}
             {filteredResults.length > 0 && (
-              <nav className="mt-3">
+              <nav className="mt-3" style={{ position: 'relative' }}>
+                <div style={{ color: 'grey', position: 'absolute', top: '0', right: '8px' }}>{currentPage * rowsPerPage - (rowsPerPage - 1)} / {currentPage !== totalPages ? currentPage * rowsPerPage : totalRows} of {totalRows} Items</div>
                 <ul className="customer-pagination pagination justify-content-center">
                   <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
                     <button className="page-link" onClick={handlePrevPage}>

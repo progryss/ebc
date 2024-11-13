@@ -11,6 +11,9 @@ router.post('/user-login',Controler.userLogin);
 router.get('/validate-user',authenticate,Controler.validateUser);
 router.post('/logout',authenticate,Controler.logoutUser);
 router.put('/change-password',authenticate,Controler.updatePassword);
+router.get('/get-users',Controler.getUsers)
+router.put('/update-user',Controler.updateUser)
+router.post('/delete-user',Controler.deleteUser)
 
 
 router.post('/upload-csv',upload.single('csvFile'),Controler.uploadCsvData);
@@ -31,4 +34,5 @@ router.post('/sync-products',Controler.syncProductFromShopify);
 router.post('/delete-products',Controler.deleteProductFromDb);
 router.get('/products-skus',Controler.getProductsBySkus);
 
+router.get('/upload/progress',Controler.progress)
 module.exports = router; 

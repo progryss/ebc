@@ -3,15 +3,16 @@ import { useState } from 'react';
 import { toast } from 'react-toastify';
 import LinearProgress from '@mui/material/LinearProgress';
 import React from 'react';
+import Loader from '../loader';
 
 export const useProgressToast = () => {
     const [progress, setProgress] = useState(0);
 
     const showProgressToast = (message = "Processing") => {
-        const toastId = toast.info(
+        const toastId = toast.success(
             <div>
                 <p style={{ margin: '0' }}>{message}... {Math.round(progress)}%</p>
-                <LinearProgress variant="determinate" value={progress} style={{ width: '100%', position: "absolute", bottom: 0 }} />
+                <LinearProgress variant="determinate" value={progress} style={{ width: '100%', position: "absolute", bottom: 0,left:'0px' }} />
             </div>,
             { autoClose: false, closeOnClick: false, closeButton: true }
         );
@@ -19,12 +20,14 @@ export const useProgressToast = () => {
     };
 
     const updateProgress = (toastId, newProgress, message = "Processing") => {
-        setProgress(newProgress);
+        if(newProgress !== 'loader'){
+            setProgress(newProgress)
+        }
         toast.update(toastId, {
             render: (
                 <div>
-                    <p style={{ margin: '0' }}>{message}... {Math.round(newProgress)}%</p>
-                    <LinearProgress variant="determinate" value={newProgress} style={{ width: '100%', position: "absolute", bottom: 0 }} />
+                    <div style={{ margin: '0',display:'flex' }}>{message}{newProgress !== 'loader' ? `... ${Math.round(newProgress)}%` :<Loader />}</div>
+                    {newProgress !== 'loader' ? <LinearProgress variant="determinate" value={newProgress} style={{ width: '100%', position: "absolute", bottom: 0 ,left:'0px'}} /> : ''}
                 </div>
             )
         });

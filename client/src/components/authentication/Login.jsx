@@ -202,14 +202,13 @@ export default function Login(props) {
               }}
             >
               <FormControl>
-                <FormLabel htmlFor="email" sx={{ marginBottom: '10px' }}>Email</FormLabel>
                 <TextField
                   error={emailError}
                   helperText={emailErrorMessage}
                   id="email"
                   type="email"
                   name="email"
-                  placeholder="your@email.com"
+                  label="Email"
                   autoComplete="email"
                   autoFocus
                   required
@@ -223,18 +222,14 @@ export default function Login(props) {
                 />
               </FormControl>
               <FormControl>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <FormLabel htmlFor="password" sx={{ marginBottom: '10px' }}>Password</FormLabel>
-                </Box>
                 <TextField
                   error={passwordError}
                   helperText={passwordErrorMessage}
                   type={showPassword ? 'text' : 'password'}
                   name="password"
-                  placeholder="••••••"
+                  label="Password"
                   id="password"
                   autoComplete="current-password"
-                  autoFocus
                   fullWidth
                   variant="outlined"
                   onChange={(e) => setPassword(e.target.value)}

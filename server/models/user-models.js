@@ -5,6 +5,10 @@ const jwt = require("jsonwebtoken");
 const tokenKey = process.env.SECRET_KEY;
 
 const userSchema = new Schema({
+    name:{
+        type:String,
+        required:true
+    },
     email: {
         type: String,
         required: true
@@ -12,6 +16,9 @@ const userSchema = new Schema({
     password: {
         type: String,
         required: true
+    },
+    role:{
+        type: Boolean
     },
     tokens: [
         {

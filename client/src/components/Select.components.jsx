@@ -4,12 +4,15 @@ import Button from '@mui/material/Button';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import EditIcon from '@mui/icons-material/Edit';
+import Person4Icon from '@mui/icons-material/Person4';
 import LogoutIcon from '@mui/icons-material/Logout';
+import HomeIcon from '@mui/icons-material/Home';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
+
 const serverUrl = process.env.REACT_APP_SERVER_URL;
 
 const StyledMenu = styled((props) => (
@@ -55,7 +58,7 @@ const StyledMenu = styled((props) => (
   },
 }));
 
-export default function CustomizedMenus() {
+export default function CustomizedMenus({ user }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const navigate = useNavigate();
   const open = Boolean(anchorEl);
@@ -85,13 +88,18 @@ export default function CustomizedMenus() {
     setAnchorEl(null);
   };
 
+  const userStore = () => {
+    navigate('/user-register')
+    setAnchorEl(null);
+  };
+
+  const goToDash = ()=>{
+    navigate('/');
+    setAnchorEl(null);
+  }
+
   return (
     <div>
-      <ToastContainer
-        position="top-right"
-        autoClose={600}
-        theme="light"
-      />
       <Button
         id="demo-customized-button"
         aria-controls={open ? 'demo-customized-menu' : undefined}
@@ -102,7 +110,7 @@ export default function CustomizedMenus() {
         onClick={handleClick}
         endIcon={<KeyboardArrowDownIcon />}
       >
-        Welcome
+        {user.name}
       </Button>
       <StyledMenu
         id="demo-customized-menu"
@@ -113,10 +121,20 @@ export default function CustomizedMenus() {
         open={open}
         onClose={handleClose}
       >
+        <MenuItem onClick={goToDash} disableRipple>
+          <HomeIcon />
+          Dashboard
+        </MenuItem>
         <MenuItem onClick={changePassword} disableRipple>
           <EditIcon />
           Change Password
         </MenuItem>
+        {user.role && (
+          <MenuItem onClick={userStore} disableRipple>
+            <Person4Icon />
+            Users
+          </MenuItem>
+        )}
         <MenuItem onClick={handleLogout} disableRipple>
           <LogoutIcon />
           Logout
