@@ -68,16 +68,16 @@ export default function AddRow({ refresh, close }) {
 
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', paddingBottom: '20px' }}>
                         <TextField label="Make" name="make" size="small" variant="standard" required />
-                        <TextField label="Model" name="model" size="small" variant="standard" required />
-                        <TextField label="Start Year" name="startYear" size="small" variant="standard" required />
-                        <TextField label="End Year" name="endYear" size="small" variant="standard" required />
+                        <TextField label="Model Sub Model" name="model" size="small" variant="standard" required />
                         <TextField label="Engine Type" name="engineType" size="small" variant="standard" required />
-                        <TextField label="Sku" name="sku" size="small" variant="standard" required />
+                        <TextField label="Year" name="year" size="small" variant="standard" required />
                         <TextField label="Bhp" name="bhp" size="small" variant="standard" required />
-                        <TextField label="Caliper" name="caliper" size="small" variant="standard" required />
+                        <TextField label="Front Brake Caliper Make" name="frontBrakeCaliperMake" size="small" variant="standard" required />
+                        <TextField label="Rear Brake Caliper Make" name="rearBrakeCaliperMake" size="small" variant="standard" required />
+                        <TextField label="Fitment Position" name="fitmentPosition" size="small" variant="standard" required />
                         <TextField label="Disc Diameter" name="discDiameter" size="small" variant="standard" required />
-                        <TextField label="Included" name="included" size="small" variant="standard" required />
-                        <TextField label="Car End" name="carEnd" size="small" variant="standard" required />
+                        <TextField label="Part Code" name="sku" size="small" variant="standard" required />
+                        <TextField label="Kit Components" name="included" size="small" variant="standard" required />
                     </Box>
                     <Button
                         type="submit"

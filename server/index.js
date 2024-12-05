@@ -10,7 +10,7 @@ app.use(cookieParser());
 
 app.use(cors({
     origin: function (origin, callback) {
-        const allowedOrigins = ['http://localhost:3000','https://jgw-new.myshopify.com','https://ebc.progryss.com'];
+        const allowedOrigins = ['http://localhost:3000', 'https://ebc-brake-shop.myshopify.com', 'https://ebc.progryss.com'];
         if (allowedOrigins.includes(origin) || !origin) {
             callback(null, true);
         } else {
@@ -21,6 +21,7 @@ app.use(cors({
 }));
 
 app.use("/api/", router);
+
 
 connectDb().then(() => {
     const port = 5000;

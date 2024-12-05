@@ -9,8 +9,8 @@ const authenticate = async (req, res, next) => {
         if (!token) {
             return res.status(401).send("Token is missing. Please log in.");
         }
-        const varification = jwt.verify(token,tokenKey);
-        const rootUser = await User.findOne({_id:varification._id});
+        const varification = jwt.verify(token, tokenKey);
+        const rootUser = await User.findOne({ _id: varification._id });
         if (!rootUser) {
             return res.status(401).send("User not found. Please log in again.");
         }

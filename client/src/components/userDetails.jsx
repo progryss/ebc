@@ -89,7 +89,7 @@ const UserDetails = React.forwardRef(({ user, close, refresh }, ref) => {
             setPasswordErrorMessage('');
         }
 
-        if ( confirmPassword?.value?.length < 6 && confirmPassword?.value?.length > 0) {
+        if (confirmPassword?.value?.length < 6 && confirmPassword?.value?.length > 0) {
             setConfirmPasswordError(true);
             setConfirmPasswordErrorMessage('Confirm Password must be at least 6 characters long.');
             isValid = false;

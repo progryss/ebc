@@ -76,8 +76,8 @@ export default function CustomizedMenus({ user }) {
     updateProgress(toastId, 'loader', 'Processing');
     try {
       await axios.post(`${serverUrl}/api/logout`, {}, { withCredentials: true });
+      finalizeToast(toastId, true, "Logged Out Successfully");
       setTimeout(() => {
-        finalizeToast(toastId, true, "Logged Out Successfully");
         window.location.href = '/login';
       }, 1000);
     } catch (error) {
