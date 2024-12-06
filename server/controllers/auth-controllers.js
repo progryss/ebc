@@ -174,7 +174,9 @@ const syncProductFromShopify = async (req, res) => {
                         sku: variant.sku,
                         price: variant.price,
                         compare_at_price: variant.compare_at_price,
-                        image_id: variant.image_id
+                        image_id: variant.image_id,
+                        inventory_quantity: variant.inventory_quantity ?? 0,
+                        inventory_policy: variant.inventory_policy ?? 'deny'
                     })) ?? []
                 };
 
@@ -596,6 +598,45 @@ const addRow = async (req, res) => {
     }
 }
 
+const productWebhook = (req, res) => {
+    try {
+        const productData = req.body;
+        console.log("Product update received:");
+        updateProductInDatabase(productData);
+
+        res.status(200).send('Message received');
+    } catch (error) {
+        console.error('Error handling product webhook:', error);
+        res.status(500).send('Failed to process webhook');
+    }
+};
+
+async function updateProductInDatabase(productData) {
+    try {
+        // Assuming a MongoDB database with Mongoose
+        await Product.findOneAndUpdate({ productId:productData.id }, {
+            title: productData?.title ?? 'Unknown Title',
+            handle: productData?.handle ?? 'Unknown Handle',
+            image_src: productData?.image?.src ?? '',
+            images: productData?.images ?? [],
+            tags: productData?.tags ?? [],
+            variants: productData?.variants?.map((variant) => ({
+                id: variant.id,
+                sku: variant.sku,
+                price: variant.price,
+                compare_at_price: variant.compare_at_price,
+                image_id: variant.image_id,
+                inventory_quantity: variant.inventory_quantity ?? 0,
+                inventory_policy: variant.inventory_policy ?? 'deny'
+            })) ?? []
+        }, { upsert: true, new: true });
+        console.log(`Product ${productData.title} updated successfully.`);
+    } catch (error) {
+        console.error('Database update failed for product:', error);
+    }
+}
+
+
 module.exports = {
     validateUser,
     userLogin,
@@ -619,5 +660,6 @@ module.exports = {
     addRow,
     progress,
     updateUser,
-    deleteUser
+    deleteUser,
+    productWebhook
 }; 

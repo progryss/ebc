@@ -34,4 +34,6 @@ router.post('/delete-products', Controler.deleteProductFromDb);
 
 router.get('/upload/progress', Controler.progress);
 
+router.post('/product-update-notify',Controler.productWebhook)
+
 module.exports = router; 

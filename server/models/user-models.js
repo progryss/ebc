@@ -66,6 +66,12 @@ const productSchema = new mongoose.Schema({
         },
         image_id: {
             type: String
+        },
+        inventory_quantity: {
+            type: String
+        },
+        inventory_policy: {
+            type: String
         }
     }]
 });
