@@ -10,7 +10,6 @@ import { styled } from '@mui/material/styles';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { IconButton, InputAdornment } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -59,28 +58,6 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
     }),
   },
 }));
-
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#000000',
-    },
-  },
-  components: {
-    MuiOutlinedInput: {
-      styleOverrides: {
-        root: {
-          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'black',
-          },
-          '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'black',
-          },
-        },
-      },
-    },
-  },
-});
 
 export default function Login(props) {
   const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
@@ -175,92 +152,90 @@ export default function Login(props) {
   return (
     <>
       <SignInContainer direction="column" justifyContent="space-between" height="100vh" >
-        <ThemeProvider theme={theme}>
-          <Card variant="outlined">
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              {/* <img src={logo} alt='' width='260' /> */}
-              <h3>EBC Brakes</h3>
-            </Box>
-            <Typography
-              component="h1"
-              variant="h4"
-              sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}
-            >
-              Sign in
-            </Typography>
-            <Box
-              component="form"
-              onSubmit={handleSubmit}
-              noValidate
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                width: '100%',
-                gap: 2,
-              }}
-            >
-              <FormControl>
-                <TextField
-                  error={emailError}
-                  helperText={emailErrorMessage}
-                  id="email"
-                  type="email"
-                  name="email"
-                  label="Email"
-                  autoComplete="email"
-                  autoFocus
-                  required
-                  fullWidth
-                  variant="outlined"
-                  onChange={(e) => setEmail(e.target.value)}
-                  color={emailError ? 'error' : 'primary'}
-                  sx={{ ariaLabel: 'email' }}
-                  value={email}
-
-                />
-              </FormControl>
-              <FormControl>
-                <TextField
-                  error={passwordError}
-                  helperText={passwordErrorMessage}
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  label="Password"
-                  id="password"
-                  autoComplete="current-password"
-                  fullWidth
-                  variant="outlined"
-                  onChange={(e) => setPassword(e.target.value)}
-                  value={password}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={handleTogglePasswordVisibility}
-                          edge="end"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  color={passwordError ? 'error' : 'primary'}
-                />
-              </FormControl>
-
-              <Button
-                type="submit"
+        <Card variant="outlined">
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            {/* <img src={logo} alt='' width='260' /> */}
+            <h3>EBC Brakes</h3>
+          </Box>
+          <Typography
+            component="h1"
+            variant="h4"
+            sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}
+          >
+            Sign in
+          </Typography>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            noValidate
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: '100%',
+              gap: 2,
+            }}
+          >
+            <FormControl>
+              <TextField
+                error={emailError}
+                helperText={emailErrorMessage}
+                id="email"
+                type="email"
+                name="email"
+                label="Email"
+                autoComplete="email"
+                autoFocus
+                required
                 fullWidth
-                variant="contained"
-                sx={{ backgroundColor: 'black' }}
-              >
-                Login
-              </Button>
-              <Typography variant='body1' color='#d32f2f' textAlign="center" component={'span'}>{loginErr}</Typography>
-            </Box>
-          </Card>
-        </ThemeProvider>
+                variant="outlined"
+                onChange={(e) => setEmail(e.target.value)}
+                color={emailError ? 'error' : 'primary'}
+                sx={{ ariaLabel: 'email' }}
+                value={email}
+
+              />
+            </FormControl>
+            <FormControl>
+              <TextField
+                error={passwordError}
+                helperText={passwordErrorMessage}
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                label="Password"
+                id="password"
+                autoComplete="current-password"
+                fullWidth
+                variant="outlined"
+                onChange={(e) => setPassword(e.target.value)}
+                value={password}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleTogglePasswordVisibility}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                color={passwordError ? 'error' : 'primary'}
+              />
+            </FormControl>
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ backgroundColor: 'black' }}
+            >
+              Login
+            </Button>
+            <Typography variant='body1' color='#d32f2f' textAlign="center" component={'span'}>{loginErr}</Typography>
+          </Box>
+        </Card>
       </SignInContainer>
     </>
   );

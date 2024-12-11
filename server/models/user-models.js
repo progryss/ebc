@@ -5,9 +5,9 @@ const jwt = require("jsonwebtoken");
 const tokenKey = process.env.SECRET_KEY;
 
 const userSchema = new Schema({
-    name:{
-        type:String,
-        required:true
+    name: {
+        type: String,
+        required: true
     },
     email: {
         type: String,
@@ -17,7 +17,7 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
-    role:{
+    role: {
         type: Boolean
     },
     tokens: [
@@ -32,7 +32,7 @@ const userSchema = new Schema({
 
 // Define schema for Shopify products
 const productSchema = new mongoose.Schema({
-    productId:{
+    productId: {
         type: String,
         required: true,
         unique: true
@@ -49,10 +49,10 @@ const productSchema = new mongoose.Schema({
         type: String
     },
     tags: {
-        type: [String],  // Assuming tags might be an array of strings
+        type: [String],
     },
     variants: [{
-        id:{
+        id: {
             type: String
         },
         sku: {
@@ -64,8 +64,14 @@ const productSchema = new mongoose.Schema({
         compare_at_price: {
             type: String
         },
-        image_id:{
-            type:String
+        image_id: {
+            type: String
+        },
+        inventory_quantity: {
+            type: String
+        },
+        inventory_policy: {
+            type: String
         }
     }]
 });
@@ -79,31 +85,45 @@ const csvDataSchema = new mongoose.Schema({
     model: {
         type: String
     },
-    year: {
-        type: Array
-    },
     engineType: {
         type: String
     },
-    sku: {
+    year: {
         type: String
     },
     bhp: {
         type: String
     },
-    caliper: {
+    frontBrakeCaliperMake: {
+        type: String
+    },
+    rearBrakeCaliperMake: {
+        type: String
+    },
+    fitmentPosition: {
         type: String
     },
     discDiameter: {
         type: String
     },
+    sku: {
+        type: String
+    },
     included: {
         type: Array
     },
-    carEnd: {
-        type: String
-    }
+
 });
+
+// filter data
+const filterDataSchema = new mongoose.Schema({
+    name:{
+        type:String
+    },
+    options:{
+        type:Array
+    }
+})
 
 userSchema.pre("save", async function (next) {
     if (this.isModified("password")) {
@@ -126,5 +146,7 @@ userSchema.methods.generateToken = async function () {
 const User = mongoose.model('User', userSchema);
 const Product = mongoose.model('Shopify Product', productSchema);
 const CsvData = mongoose.model('Csv Option', csvDataSchema);
+const filterData = mongoose.model('Filter Category',filterDataSchema)
 
-module.exports = { User, Product, CsvData };
+
+module.exports = { User, Product, CsvData, filterData };

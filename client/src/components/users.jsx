@@ -38,26 +38,26 @@ export default function Users() {
     };
     const handleCloseEdit = () => setOpenEdit(false);
 
-    const handleDeleteUser = async(user) => {
+    const handleDeleteUser = async (user) => {
         const userResponse = window.confirm('Are you sure you want to delete?');
         if (!userResponse) return;
         const payload = {
-            email:user.email
+            email: user.email
         }
         console.log(payload)
         const toastId = showProgressToast('Deleting User');
         updateProgress(toastId, 'loader', 'Deleting User');
         try {
-            const response = await axios.post(`${serverUrl}/api/delete-user`,payload,{
-                headers:{
-                    "Content-Type":"application/json"
+            const response = await axios.post(`${serverUrl}/api/delete-user`, payload, {
+                headers: {
+                    "Content-Type": "application/json"
                 }
             })
             console.log(response)
             finalizeToast(toastId, true, "User Deleted Successfully!");
             fetchUsers()
         } catch (error) {
-            console.log('error deleting user',error)
+            console.log('error deleting user', error)
             finalizeToast(toastId, false, "Failed to delete user.");
         }
     }
@@ -87,7 +87,7 @@ export default function Users() {
                                     <IconButton sx={{ marginRight: "10px" }} onClick={() => handleOpenEdit(user)} >
                                         <EditIcon size='small' />
                                     </IconButton>
-                                    <IconButton  onClick={() => handleDeleteUser(user)}>
+                                    <IconButton onClick={() => handleDeleteUser(user)}>
                                         <DeleteIcon />
                                     </IconButton>
                                 </TableCell>

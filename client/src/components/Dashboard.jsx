@@ -6,7 +6,6 @@ import RowDetails from "./rowDetails";
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ToastContainer } from 'react-toastify';
 import Button from '@mui/material/Button';
 import Modal from '@mui/material/Modal';
 import AddRow from "./addRow";
@@ -69,14 +68,15 @@ export default function Dashboard() {
               { id: 'selectAll', title: 'Select All' },
               { id: 'make', title: 'Make' },
               { id: 'model', title: 'Model' },
-              { id: 'year', title: 'Year' },
               { id: 'engineType', title: 'Engine Type' },
-              { id: 'sku', title: 'Sku' },
+              { id: 'year', title: 'Year' },
               { id: 'bhp', title: 'Bhp' },
-              { id: 'caliper', title: 'Caliper' },
+              { id: 'frontBrakeCaliperMake', title: 'Front Brake Caliper' },
+              { id: 'rearBrakeCaliperMake', title: 'Rear Brake Caliper' },
+              { id: 'fitmentPosition', title: 'Fitment Position' },
               { id: 'discDiameter', title: 'Disc Diameter' },
-              { id: 'included', title: 'Included' },
-              { id: 'carEnd', title: 'Car End' }
+              { id: 'sku', title: 'Part Code' },
+              { id: 'included', title: 'Kit Components' },
             ];
             const savedColumns = JSON.parse(localStorage.getItem('columns'));
             if (savedColumns) {
@@ -384,10 +384,10 @@ export default function Dashboard() {
                     >
                       <i className="fa fa-search"></i>
                     </button>
-                    <RefreshIcon sx={{cursor:'pointer',marginLeft:'10px'}} onClick={()=> {
+                    <RefreshIcon sx={{ cursor: 'pointer', marginLeft: '10px' }} onClick={() => {
                       setSearch('');
                       setSearchString('');
-                    }}/>
+                    }} />
                   </div>
                 </div>
                 <div className="d-flex">
@@ -437,7 +437,7 @@ export default function Dashboard() {
                               type="checkbox"
                               onChange={() => handleToggleColumn(key)}
                               checked={columns.some(column => column.id === key)}
-                            /> {key}
+                            /> {key === "sku" ? "Part No" : key === "included" ? "Kit Components" : key}
                           </label>
                         </li>
                       ))}
@@ -550,12 +550,6 @@ export default function Dashboard() {
                                     checked={selectedRows.includes(row._id)}
                                     onChange={() => handleSelectRow(row._id)}
                                   />
-                                </td>
-                              );
-                            } else if (column.id === 'year') {
-                              return (
-                                <td key={`row-${index}`}>
-                                  <span>{row[column.id][0] + "-" + row[column.id][row[column.id].length - 1]}</span>
                                 </td>
                               );
                             } else {

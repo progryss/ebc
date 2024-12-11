@@ -1,38 +1,110 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
-
+const path = require('path');
+const fs = require('fs');
 const Controler = require('../controllers/auth-controllers');
 const authenticate = require('../middlewares/authenticate');
 
-router.post('/user-register',Controler.userRegister);
-router.post('/user-login',Controler.userLogin);
-router.get('/validate-user',authenticate,Controler.validateUser);
-router.post('/logout',authenticate,Controler.logoutUser);
-router.put('/change-password',authenticate,Controler.updatePassword);
-router.get('/get-users',Controler.getUsers)
-router.put('/update-user',Controler.updateUser)
-router.post('/delete-user',Controler.deleteUser)
+// Ensure upload directories exist
+const ensureDirectoryExistence = (dirPath) => {
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+    }
+};
 
+// Set up multer storage for images
+const imageStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDir = path.join(__dirname, '..', 'uploads', 'images');
+        ensureDirectoryExistence(uploadDir); // Ensure the directory exists
+        cb(null, uploadDir); // Set destination to 'uploads/images'
+    },
+    filename: (req, file, cb) => {
+        const newFileName = `${Date.now()}_${file.originalname}`;
+        cb(null, newFileName); // Set the filename with timestamp and original name
+    },
+});
 
-router.post('/upload-csv',upload.single('csvFile'),Controler.uploadCsvData);
-router.post('/delete-csv',Controler.deleteCsvData);
-router.delete('/delete-rows',Controler.deleteMultipleRows)
-router.put('/update-row',Controler.updateRow)
-router.post('/add-row',Controler.addRow)
+// Set up multer storage for CSV files
+const csvStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDir = path.join(__dirname, '..', 'uploads', 'csv');
+        ensureDirectoryExistence(uploadDir); // Ensure the directory exists
+        cb(null, uploadDir); // Set destination to 'uploads/csv'
+    },
+    filename: (req, file, cb) => {
+        cb(null, file.originalname); // Keep the original file name for CSV
+    },
+});
 
-router.get('/csv-data',Controler.getCsvData);
-router.get('/csv-data-makes',Controler.getCsvDataMakes);
-router.get('/csv-data-models',Controler.getCsvDataModels);
-router.get('/csv-data-years',Controler.getCsvDataYears);
-router.get('/csv-data-engineTypes',Controler.getCsvDataEngineTypes);
-router.get('/csv-data-sku',Controler.getCsvDataSku);
-router.get('/csv-data-skus',Controler.getCsvDataSkus);
+// Filter for image files
+const imageFileFilter = (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|gif/; // Allowed image file types
+    const mimetype = filetypes.test(file.mimetype);
+    if (mimetype) {
+        return cb(null, true); // Accept image file
+    } else {
+        cb(new Error('Only image files are allowed'), false); // Reject non-image file
+    }
+};
 
-router.post('/sync-products',Controler.syncProductFromShopify);
-router.post('/delete-products',Controler.deleteProductFromDb);
-router.get('/products-skus',Controler.getProductsBySkus);
+// Filter for CSV files
+const csvFileFilter = (req, file, cb) => {
+    const filetypes = /csv/; // Allowed CSV file types
+    const mimetype = filetypes.test(file.mimetype);
 
-router.get('/upload/progress',Controler.progress)
+    if (mimetype) {
+        return cb(null, true); // Accept CSV file
+    } else {
+        cb(new Error('Only CSV files are allowed'), false); // Reject non-CSV file
+    }
+};
+
+// Set up multer with image configurations
+const uploadImage = multer({
+    storage: imageStorage,
+    fileFilter: imageFileFilter,
+});
+
+// Set up multer with CSV configurations
+const uploadCsv = multer({
+    storage: csvStorage,
+    fileFilter: csvFileFilter,
+});
+
+router.post('/user-register', Controler.userRegister);
+router.post('/user-login', Controler.userLogin);
+router.get('/validate-user', authenticate, Controler.validateUser);
+router.post('/logout', authenticate, Controler.logoutUser);
+router.put('/change-password', authenticate, Controler.updatePassword);
+router.get('/get-users', authenticate, Controler.getUsers)
+router.put('/update-user', authenticate, Controler.updateUser)
+router.post('/delete-user', authenticate, Controler.deleteUser)
+
+router.post('/upload-csv', uploadCsv.single('csvFile'), Controler.uploadCsvData);
+router.post('/delete-csv', Controler.deleteCsvData);
+router.delete('/delete-rows', Controler.deleteMultipleRows);
+router.put('/update-row', Controler.updateRow);
+router.post('/add-row', Controler.addRow);
+
+router.get('/csv-data', Controler.getCsvData);
+router.get('/csv-data-makes', Controler.getCsvDataMakes);
+router.get('/csv-data-models', Controler.getCsvDataModels);
+router.get('/csv-data-years', Controler.getCsvDataYears);
+router.get('/csv-data-engineTypes', Controler.getCsvDataEngineTypes);
+router.get('/csv-data-skus', Controler.getCsvDataSkus);
+router.post('/get-products-by-skus', Controler.getProductsBySkus);
+
+router.post('/sync-products', Controler.syncProductFromShopify);
+router.post('/delete-products', Controler.deleteProductFromDb);
+
+router.get('/upload/progress', Controler.progress);
+
+router.post('/product-update-notify', Controler.productWebhook)
+
+router.post('/add-category', Controler.addCategory);
+router.get('/get-category', Controler.getCategories);
+router.put('/update-category',uploadImage.single('labelImage'), Controler.updateCategory);
+
 module.exports = router; 

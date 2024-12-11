@@ -11,6 +11,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useNavigate } from 'react-router-dom';
 import { useProgressToast } from './customHooks/useProgressToast';
 import axios from 'axios';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 
 const serverUrl = process.env.REACT_APP_SERVER_URL;
 
@@ -76,8 +77,8 @@ export default function CustomizedMenus({ user }) {
     updateProgress(toastId, 'loader', 'Processing');
     try {
       await axios.post(`${serverUrl}/api/logout`, {}, { withCredentials: true });
+      finalizeToast(toastId, true, "Logged Out Successfully");
       setTimeout(() => {
-        finalizeToast(toastId, true, "Logged Out Successfully");
         window.location.href = '/login';
       }, 1000);
     } catch (error) {
@@ -93,6 +94,11 @@ export default function CustomizedMenus({ user }) {
 
   const userStore = () => {
     navigate('/user-register')
+    setAnchorEl(null);
+  };
+
+  const visitProductTagInfo = () => {
+    navigate('/filter-tags')
     setAnchorEl(null);
   };
 
@@ -127,6 +133,10 @@ export default function CustomizedMenus({ user }) {
         <MenuItem onClick={goToDash} disableRipple>
           <HomeIcon />
           Dashboard
+        </MenuItem>
+        <MenuItem onClick={visitProductTagInfo} disableRipple>
+          <LocalOfferIcon />
+          Filter Tags
         </MenuItem>
         <MenuItem onClick={changePassword} disableRipple>
           <EditIcon />

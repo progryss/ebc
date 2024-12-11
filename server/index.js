@@ -2,15 +2,17 @@ const express = require('express');
 const connectDb = require('./utils/db');
 const cors = require('cors');
 const app = express();
+const path = require('path');
 const router = require('./router/auth-routes');
 const cookieParser = require('cookie-parser');
+require('dotenv').config();
 
 app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors({
     origin: function (origin, callback) {
-        const allowedOrigins = ['http://localhost:3000','https://jgw-new.myshopify.com','https://ebc.progryss.com'];
+        const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : [];
         if (allowedOrigins.includes(origin) || !origin) {
             callback(null, true);
         } else {
@@ -21,6 +23,9 @@ app.use(cors({
 }));
 
 app.use("/api/", router);
+
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 connectDb().then(() => {
     const port = 5000;
