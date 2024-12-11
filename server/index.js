@@ -5,13 +5,14 @@ const app = express();
 const path = require('path');
 const router = require('./router/auth-routes');
 const cookieParser = require('cookie-parser');
+require('dotenv').config();
 
 app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors({
     origin: function (origin, callback) {
-        const allowedOrigins = ['http://localhost:3000', 'https://ebc-brake-shop.myshopify.com', 'https://ebc.progryss.com'];
+        const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : [];
         if (allowedOrigins.includes(origin) || !origin) {
             callback(null, true);
         } else {
