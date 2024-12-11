@@ -115,6 +115,16 @@ const csvDataSchema = new mongoose.Schema({
 
 });
 
+// filter data
+const filterDataSchema = new mongoose.Schema({
+    name:{
+        type:String
+    },
+    options:{
+        type:Array
+    }
+})
+
 userSchema.pre("save", async function (next) {
     if (this.isModified("password")) {
         this.password = await bcrypt.hash(this.password, 12);
@@ -136,5 +146,7 @@ userSchema.methods.generateToken = async function () {
 const User = mongoose.model('User', userSchema);
 const Product = mongoose.model('Shopify Product', productSchema);
 const CsvData = mongoose.model('Csv Option', csvDataSchema);
+const filterData = mongoose.model('Filter Category',filterDataSchema)
 
-module.exports = { User, Product, CsvData };
+
+module.exports = { User, Product, CsvData, filterData };

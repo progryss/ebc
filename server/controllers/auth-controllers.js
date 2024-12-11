@@ -1,6 +1,6 @@
 require('dotenv').config();
 const bcrypt = require("bcryptjs");
-const { User, Product, CsvData } = require('../models/user-models')
+const { User, Product, CsvData, filterData } = require('../models/user-models')
 const axios = require('axios');
 
 // for csv file upload
@@ -614,7 +614,7 @@ const productWebhook = (req, res) => {
 async function updateProductInDatabase(productData) {
     try {
         // Assuming a MongoDB database with Mongoose
-        await Product.findOneAndUpdate({ productId:productData.id }, {
+        await Product.findOneAndUpdate({ productId: productData.id }, {
             title: productData?.title ?? 'Unknown Title',
             handle: productData?.handle ?? 'Unknown Handle',
             image_src: productData?.image?.src ?? '',
@@ -636,6 +636,64 @@ async function updateProductInDatabase(productData) {
     }
 }
 
+const addCategory = async (req, res) => {
+    try {
+        const existingCategory = await filterData.findOne({ name: req.body.name });
+        if (existingCategory) {
+            return res.status(409).send('category already exists.')
+        }
+        const newCategory = new filterData({
+            name: req.body.name
+        })
+        await newCategory.save()
+        res.status(200).send('category saved successfully')
+    } catch (error) {
+        res.status(500).send('error in creating category', error)
+    }
+}
+
+const updateCategory = async (req, res) => {
+    try {
+
+        // Check if image is uploaded
+        const imagePath = req.file ? `/uploads/images/${req.file.filename}` : null;
+        const option = {
+            subCategory: req.body.subCategory,
+            labelBg: req.body.labelBg,
+            labelText: req.body.labelText,
+            labelImage: imagePath
+        }
+        // findOneAndUpdate takes a filter object, update object, and options
+        const existingCategory = await filterData.findOneAndUpdate(
+            { name: req.body.category },
+            { $addToSet: { options: option } },
+            { new: true, runValidators: true }
+        );
+
+        if (!existingCategory) {
+            return res.status(404).send('Category not found.');
+        }
+        res.status(200).send('Category updated successfully');
+    } catch (error) {
+        // Use JSON to send error details
+        res.status(500).json({
+            message: 'Error in updating category',
+            error: error.message
+        });
+    }
+};
+
+const getCategories = async (req, res) => {
+    try {
+        const categories = await filterData.find();
+        if (!categories) {
+            res.status(404).send('no category found')
+        }
+        res.status(200).send(categories)
+    } catch (error) {
+        res.status(500).send('error in getting filter categories')
+    }
+}
 
 module.exports = {
     validateUser,
@@ -661,5 +719,8 @@ module.exports = {
     progress,
     updateUser,
     deleteUser,
-    productWebhook
+    productWebhook,
+    addCategory,
+    getCategories,
+    updateCategory
 }; 

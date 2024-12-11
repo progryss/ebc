@@ -2,6 +2,7 @@ const express = require('express');
 const connectDb = require('./utils/db');
 const cors = require('cors');
 const app = express();
+const path = require('path');
 const router = require('./router/auth-routes');
 const cookieParser = require('cookie-parser');
 
@@ -22,6 +23,8 @@ app.use(cors({
 
 app.use("/api/", router);
 
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 connectDb().then(() => {
     const port = 5000;

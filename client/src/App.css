@@ -599,3 +599,11 @@
       padding: 3px;
       height: 100%;
     }
+    .labelText{
+      border-width: 0 0 1px 0;
+      margin-left: 140px;
+    }
+    .labelText:focus-visible{
+      border-color: rgb(58, 33, 220);
+      outline-width: 0;
+    }

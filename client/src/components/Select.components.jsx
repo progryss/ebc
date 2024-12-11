@@ -11,6 +11,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useNavigate } from 'react-router-dom';
 import { useProgressToast } from './customHooks/useProgressToast';
 import axios from 'axios';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 
 const serverUrl = process.env.REACT_APP_SERVER_URL;
 
@@ -96,6 +97,11 @@ export default function CustomizedMenus({ user }) {
     setAnchorEl(null);
   };
 
+  const visitProductTagInfo = () => {
+    navigate('/filter-tags')
+    setAnchorEl(null);
+  };
+
   const goToDash = () => {
     navigate('/');
     setAnchorEl(null);
@@ -127,6 +133,10 @@ export default function CustomizedMenus({ user }) {
         <MenuItem onClick={goToDash} disableRipple>
           <HomeIcon />
           Dashboard
+        </MenuItem>
+        <MenuItem onClick={visitProductTagInfo} disableRipple>
+          <LocalOfferIcon />
+          Filter Tags
         </MenuItem>
         <MenuItem onClick={changePassword} disableRipple>
           <EditIcon />

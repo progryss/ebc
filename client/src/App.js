@@ -6,6 +6,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import AuthGuard from './components/authentication/userProtected';
 import Dashboard from './components/Dashboard';
 import Users from './components/users';
+import FilterTags from './components/filterTags';
 
 const theme = createTheme({
   typography: {
@@ -46,6 +47,15 @@ const router = createBrowserRouter([
       <AuthGuard>
         <AppHeader />
         <Users />
+      </AuthGuard>
+    )
+  },
+  {
+    path: "/filter-tags",
+    element: (
+      <AuthGuard>
+        <AppHeader />
+        <FilterTags />
       </AuthGuard>
     )
   }
