@@ -224,29 +224,31 @@ export default function Dashboard() {
   }
 
   const syncProduct = async () => {
+    const toastId = showProgressToast('syncing Shopify Products');
+    updateProgress(toastId, 'loader', 'syncing Shopify Products');
     try {
-      let response = await axios.post(`${serverUrl}/api/sync-products`, {
-        "Content-Type": "application/json"
+      await axios.post(`${serverUrl}/api/sync-products`, {
+        headers: { "Content-Type": "application/json" },
+        timeout: 180000
       });
-      alert('All Shopify products sync');
-      console.log(response)
-
+      finalizeToast(toastId, true, 'All Products Sync.');
     } catch (error) {
       console.error('Error saving products:', error);
-      alert('Failed to save products.');
+      finalizeToast(toastId, false, '','Failed to Sync Products.');
     }
   }
 
   const deleteProduct = async () => {
+    const userResponse = window.confirm('Are you sure you want to delete?');
+    if (!userResponse) return;
+    const toastId = showProgressToast('Deleting Shopify Products');
+    updateProgress(toastId, 'loader', 'Deleting Shopify Products');
     try {
-      await fetch(`${serverUrl}/api/delete-products`, {
-        method: 'POST'
-      });
-      alert('All Shopify products Deleted');
-
+      let response = await axios.post(`${serverUrl}/api/delete-products`);
+      finalizeToast(toastId, true, 'All Products Deleted.');
     } catch (error) {
       console.error('Error deleting products:', error);
-      alert('Failed to delete products.'); // Display error message
+      finalizeToast(toastId, false, '','Failed to delete Products.');
     }
   }
 
@@ -257,19 +259,19 @@ export default function Dashboard() {
       const response = await fetch(`${serverUrl}/api/upload/progress`);
       const data = await response.json();
 
-      if (!data.total) { // Ensure total is not zero or undefined to avoid division by zero
+      if (!data.totalBatches) { // Ensure total is not zero or undefined to avoid division by zero
         console.error('Total number of records is zero or not defined.');
         clearInterval(progressInterval);
         finalizeToast(toastId, false, "Failed to fetch progress");
         return;
       }
 
-      const percentage = (data.progress / data.total) * 100;
+      const percentage = (data.progress / data.totalBatches) * 100;
       setProgress(percentage);
       updateProgress(toastId, percentage, 'Uploading CSV');
       if (percentage >= 100) {
         clearInterval(progressInterval);
-        finalizeToast(toastId, true, `${data.total} Records uploaded !`);
+        finalizeToast(toastId, true, `${data.totalRecords} Records uploaded !`);
         setTrigerUseeffectByDelete(!trigerUseeffectByDelete)
       }
     }, 500);
@@ -304,26 +306,25 @@ export default function Dashboard() {
         throw new Error(`Failed to upload file: ${errorText}`);
       }
     } catch (error) {
-      finalizeToast(toastId, false, "Failed to upload CSV");
+      finalizeToast(toastId, false,'', "Failed to upload CSV ! Required column is missing in CSV (Make, Model, Engine Type, Year). ");
       console.error('Error uploading file:', error);
-      alert('Error uploading file');
     }
   };
 
   const deleteCsvData = async () => {
     const userResponse = window.confirm('Are you sure you want to delete?');
     if (!userResponse) return;
-    const toastId = showProgressToast('Deleting Csv data');
-    updateProgress(toastId, 'loader', 'Deleting Csv data');
+    const toastId = showProgressToast('Deleting CSV data');
+    updateProgress(toastId, 'loader', 'Deleting CSV data');
     try {
       await fetch(`${serverUrl}/api/delete-csv`, {
         method: 'POST'
       });
       refreshIt()
-      finalizeToast(toastId, true, 'Csv Data Deleted.');
+      finalizeToast(toastId, true, 'CSV Data Deleted.');
     } catch (error) {
       console.error('Error in deleting Csv data', error);
-      finalizeToast(toastId, false, 'Failed to delete Csv data.');
+      finalizeToast(toastId, false, '','Failed to delete Csv data.');
     }
   }
 
@@ -404,19 +405,19 @@ export default function Dashboard() {
                     className="btn btn-primary ms-2"
                     onClick={deleteCsvData}
                   >
-                    <i className="fa fa-trash me-1"></i> Delete CSV
+                    <i className="fa fa-trash me-1"></i> Delete All CSV Data
                   </button>
                   <button
                     className="btn btn-primary ms-2"
                     onClick={syncProduct}
                   >
-                    <i className="fas fa-sync me-1"></i> Sync Product
+                    <i className="fas fa-sync me-1"></i> Sync Shopify Products
                   </button>
                   <button
                     className="btn btn-primary ms-2"
                     onClick={deleteProduct}
                   >
-                    <i className="fa fa-trash me-1"></i> Delete Product
+                    <i className="fa fa-trash me-1"></i> Delete Shopify Products
                   </button>
                   <div className="dropdown ms-2">
                     <button
@@ -577,7 +578,7 @@ export default function Dashboard() {
             {/* pagination */}
             {filteredResults.length > 0 && (
               <nav className="mt-3" style={{ position: 'relative' }}>
-                <div style={{ color: 'grey', position: 'absolute', top: '0', right: '8px' }}>{currentPage * rowsPerPage - (rowsPerPage - 1)} / {currentPage !== totalPages ? currentPage * rowsPerPage : totalRows} of {totalRows} Items</div>
+                <div style={{ color: 'grey', position: 'absolute', top: '0', right: '8px' }}>{currentPage * rowsPerPage - (rowsPerPage - 1)} - {currentPage !== totalPages ? currentPage * rowsPerPage : totalRows} of {totalRows} Items</div>
                 <ul className="customer-pagination pagination justify-content-center">
                   <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
                     <button className="page-link" onClick={handlePrevPage}>

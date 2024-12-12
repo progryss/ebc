@@ -23,7 +23,12 @@ export default function Users() {
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get(`${serverUrl}/api/get-users`);
+            const response = await axios.get(`${serverUrl}/api/get-users`, {
+                withCredentials: true,
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            });
             setUsers(response.data);
         } catch (error) {
             console.error("Failed to fetch users:", error);
@@ -80,16 +85,20 @@ export default function Users() {
                     </TableHead>
                     <TableBody>
                         {users.map((user, index) => (
-                            <TableRow key={`${user.id}-${index}`}>
+                            <TableRow key={`${user.id}-${index}`} sx={{height:'53px'}}>
                                 <TableCell size='small'>{user.name}</TableCell>
                                 <TableCell align="right" size='small' >{user.email}</TableCell>
                                 <TableCell align="right" size='small' >
-                                    <IconButton sx={{ marginRight: "10px" }} onClick={() => handleOpenEdit(user)} >
-                                        <EditIcon size='small' />
-                                    </IconButton>
-                                    <IconButton onClick={() => handleDeleteUser(user)}>
-                                        <DeleteIcon />
-                                    </IconButton>
+                                    {!user.role && (
+                                        <>
+                                            <IconButton sx={{ marginRight: "10px" }} onClick={() => handleOpenEdit(user)} >
+                                                <EditIcon size='small' />
+                                            </IconButton>
+                                            <IconButton onClick={() => handleDeleteUser(user)}>
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </>
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ))}
