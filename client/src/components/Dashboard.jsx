@@ -234,7 +234,7 @@ export default function Dashboard() {
       finalizeToast(toastId, true, 'All Products Sync.');
     } catch (error) {
       console.error('Error saving products:', error);
-      finalizeToast(toastId, false, '','Failed to Sync Products.');
+      finalizeToast(toastId, false, '', 'Failed to Sync Products.');
     }
   }
 
@@ -248,7 +248,7 @@ export default function Dashboard() {
       finalizeToast(toastId, true, 'All Products Deleted.');
     } catch (error) {
       console.error('Error deleting products:', error);
-      finalizeToast(toastId, false, '','Failed to delete Products.');
+      finalizeToast(toastId, false, '', 'Failed to delete Products.');
     }
   }
 
@@ -274,7 +274,7 @@ export default function Dashboard() {
         finalizeToast(toastId, true, `${data.totalRecords} Records uploaded !`);
         setTrigerUseeffectByDelete(!trigerUseeffectByDelete)
       }
-    }, 500);
+    }, 3000);
   }
 
   const handleUploadCsv = async () => {
@@ -306,7 +306,7 @@ export default function Dashboard() {
         throw new Error(`Failed to upload file: ${errorText}`);
       }
     } catch (error) {
-      finalizeToast(toastId, false,'', "Failed to upload CSV ! Required column is missing in CSV (Make, Model, Engine Type, Year). ");
+      finalizeToast(toastId, false, '', "Failed to upload CSV ! Required column is missing in CSV (Make, Model, Engine Type, Year). ");
       console.error('Error uploading file:', error);
     }
   };
@@ -324,7 +324,7 @@ export default function Dashboard() {
       finalizeToast(toastId, true, 'CSV Data Deleted.');
     } catch (error) {
       console.error('Error in deleting Csv data', error);
-      finalizeToast(toastId, false, '','Failed to delete Csv data.');
+      finalizeToast(toastId, false, '', 'Failed to delete Csv data.');
     }
   }
 
