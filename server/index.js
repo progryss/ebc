@@ -2,6 +2,7 @@ const express = require('express');
 const connectDb = require('./utils/db');
 const cors = require('cors');
 const app = express();
+const helmet = require('helmet');
 const path = require('path');
 const router = require('./router/auth-routes');
 const cookieParser = require('cookie-parser');
@@ -9,6 +10,15 @@ require('dotenv').config();
 
 app.use(express.json());
 app.use(cookieParser());
+
+app.use(helmet());
+
+// Extend the server timeout
+app.use((req, res, next) => {
+    req.setTimeout(500000); // 500 seconds
+    res.setTimeout(500000);
+    next();
+});
 
 app.use(cors({
     origin: function (origin, callback) {
