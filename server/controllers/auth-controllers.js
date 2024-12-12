@@ -222,7 +222,7 @@ async function insertBatch(batch, batchNumber) {
     await CsvData.insertMany(batch);
     console.log(`Batch ${batchNumber} inserted successfully.`);
 }
-const BATCH_SIZE = 10000;
+const BATCH_SIZE = 50000;
 let batchNumber = 0;
 let totalRecords = 0;
 
@@ -296,7 +296,7 @@ async function countCsvRows(filePath) {
                 rowCount++;
             })
             .on('end', () => {
-                console.log(`Total batches: ${rowCount / 10000}`);
+                console.log(`Total batches: ${rowCount / BATCH_SIZE}`);
                 resolve(rowCount);
             })
             .on('error', reject);  // Handle any errors
