@@ -229,57 +229,62 @@ let totalRecords = 0;
 // function to save csv product to db in batch
 async function processCsvFile(filePath) {
     let batch = []; // Array to hold the batch
+    return new Promise((resolve, reject) => {
+        const stream = fs.createReadStream(filePath);
+        const csvStream = csv.parse({ headers: true })
+            .transform(data => {
+                const transformed = {
+                    make: data.Make.trim(),
+                    model: data.SubModel ? `${data.Model.trim()} ${data.SubModel.trim()}` : data.Model.trim(),
+                    engineType: `${data.Engine.trim()} ${data.EngineType.trim()} ${data.FuelType.trim()}`,
+                    year: data.YearNo.trim(),
+                    bhp: data['BHP'] ? data['BHP'].trim() : '',
+                    frontBrakeCaliperMake: data.FrontBrakeCaliperMake ? data.FrontBrakeCaliperMake.trim() : '',
+                    rearBrakeCaliperMake: data.RearBrakeCaliperMake ? data.RearBrakeCaliperMake.trim() : '',
+                    fitmentPosition: data.FitmentPosition ? data.FitmentPosition.trim() : '',
+                    discDiameter: data.DiscDiameter ? data.DiscDiameter.trim() : '',
+                    included: data.KitComponents ? data.KitComponents.split(',').map(item => item.trim()) : [],
+                    sku: data.PartCode.trim(),
+                };
+                return transformed;
+            })
 
-    const stream = fs.createReadStream(filePath);
-    const csvStream = csv.parse({ headers: true })
-        .transform(data => {
-            const transformed = {
-                make: data.Make.trim(),
-                model: data.SubModel ? `${data.Model.trim()} ${data.SubModel.trim()}` : data.Model.trim(),
-                engineType: `${data.Engine.trim()} ${data.EngineType.trim()} ${data.FuelType.trim()}`,
-                year: data.YearNo.trim(),
-                bhp: data['BHP'].trim(),
-                frontBrakeCaliperMake: data.FrontBrakeCaliperMake.trim(),
-                rearBrakeCaliperMake: data.RearBrakeCaliperMake.trim(),
-                fitmentPosition: data.FitmentPosition.trim(),
-                discDiameter: data.DiscDiameter.trim(),
-                included: data.KitComponents ? data.KitComponents.split(',').map(item => item.trim()) : [],
-                sku: data.PartCode.trim(),
-            };
-            return transformed;
-        })
+            .on('error', error => {
+                console.error('Error reading CSV:', error);
+                reject()
+            })
+            .on('data', async (row) => {
+                batch.push(row);
 
-        .on('error', error => console.error('Error reading CSV:', error))
-        .on('data', async (row) => {
-            batch.push(row);
+                if (batch.length >= BATCH_SIZE) {
+                    csvStream.pause(); // Pause the stream to manage flow control
+                    batchNumber++;
+                    // Asynchronously insert the batch
+                    insertBatch(batch, batchNumber).then(() => {
+                        batch = []; // Clear the batch after successful insertion
+                        csvStream.resume(); // Resume the stream
+                    }).catch(error => {
+                        console.error(`Error inserting batch ${batchNumber}:`, error);
+                        csvStream.resume(); // Optionally continue processing after a failed insert
+                    });
+                }
+                resolve()
+            })
+            .on('end', () => {
+                // Handle the last batch
+                if (batch.length > 0) {
+                    batchNumber++;
+                    insertBatch(batch, batchNumber).then(() => {
+                        console.log(`Final batch ${batchNumber} inserted.`);
+                    }).catch(error => {
+                        console.error(`Error inserting final batch ${batchNumber}:`, error);
+                    });
+                }
+                console.log('CSV file has been processed successfully.');
+            });
 
-            if (batch.length >= BATCH_SIZE) {
-                csvStream.pause(); // Pause the stream to manage flow control
-                batchNumber++;
-                // Asynchronously insert the batch
-                insertBatch(batch, batchNumber).then(() => {
-                    batch = []; // Clear the batch after successful insertion
-                    csvStream.resume(); // Resume the stream
-                }).catch(error => {
-                    console.error(`Error inserting batch ${batchNumber}:`, error);
-                    csvStream.resume(); // Optionally continue processing after a failed insert
-                });
-            }
-        })
-        .on('end', () => {
-            // Handle the last batch
-            if (batch.length > 0) {
-                batchNumber++;
-                insertBatch(batch, batchNumber).then(() => {
-                    console.log(`Final batch ${batchNumber} inserted.`);
-                }).catch(error => {
-                    console.error(`Error inserting final batch ${batchNumber}:`, error);
-                });
-            }
-            console.log('CSV file has been processed successfully.');
-        });
-
-    stream.pipe(csvStream);
+        stream.pipe(csvStream);
+    })
 }
 
 async function countCsvRows(filePath) {
@@ -322,7 +327,8 @@ const progress = async (req, res) => {
         res.json({
             status: 'processing',
             progress: batchNumber,
-            total: totalRecords / 10000
+            totalBatches: totalRecords / BATCH_SIZE,
+            totalRecords: totalRecords
         });
     } else {
         res.json({

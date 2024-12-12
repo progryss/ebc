@@ -11,7 +11,7 @@ export const useProgressToast = () => {
     const showProgressToast = (message = "Processing") => {
         const toastId = toast.success(
             <div>
-                <p style={{ margin: '0' }}>{message}... {Math.round(progress)}%</p>
+                <div style={{ margin: '0',display:'flex'  }}>{message}{progress === 0 ? <Loader/> : `... ${Math.round(progress)}%`}</div>
                 <LinearProgress variant="determinate" value={progress} style={{ width: '100%', position: "absolute", bottom: 0,left:'0px' }} />
             </div>,
             { autoClose: false, closeOnClick: false, closeButton: true }
@@ -37,7 +37,7 @@ export const useProgressToast = () => {
         toast.update(toastId, {
             render: isSuccess ? successMessage : errorMessage,
             type: isSuccess ? "success" : "error",
-            autoClose: 2000,
+            autoClose: 4000,
             closeOnClick: true,
             closeButton: true,
         });
