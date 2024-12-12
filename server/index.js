@@ -15,8 +15,8 @@ app.use(helmet());
 
 // Extend the server timeout
 app.use((req, res, next) => {
-    req.setTimeout(500000); // 500 seconds
-    res.setTimeout(500000);
+    req.setTimeout(1000000); // 16.66 minute
+    res.setTimeout(1000000);
     next();
 });
 
