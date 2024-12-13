@@ -2,6 +2,7 @@ require('dotenv').config();
 const bcrypt = require("bcryptjs");
 const { User, Product, CsvData, filterData } = require('../models/user-models')
 const axios = require('axios');
+const async = require('async');
 
 // for csv file upload
 const fs = require('fs');
@@ -505,26 +506,34 @@ const getProductsBySkus = async (req, res) => {
     try {
         const { skus, make, model, year, engineType } = req.body;
 
-        let query = { 'sku': { $in: skus } };
-        // Optionally add other criteria if they exist
-        if (make) query.make = make;
-        if (model) query.model = model;
-        if (year) query.year = year;
-        if (engineType) query.engineType = engineType;
+        let csvQuery = { 'sku': { $in: skus } };
+        if (make) csvQuery.make = make;
+        if (model) csvQuery.model = model;
+        if (year) csvQuery.year = year;
+        if (engineType) csvQuery.engineType = engineType;
 
-        const csvDataResults = await CsvData.find(query)
-        const products = await Product.find({ 'variants.sku': { $in: skus } });
-        const data = {
-            csvDataResults,
-            products
-        }
-        return res.status(200).send(data)
+        let productQuery = { 'variants.sku': { $in: skus } };
+
+        // Fetching data concurrently using async.parallel
+        async.parallel({
+            csvDataResults: async () => await CsvData.find(csvQuery),
+            products: async () => await Product.find(productQuery)
+        }, (err, results) => {
+            if (err) {
+                console.error('Error fetching data:', err);
+                return res.status(500).send({ message: "Failed to fetch products", error: err });
+            }
+            // Send combined results as response
+            return res.status(200).send(results);
+        });
 
     } catch (error) {
         console.error('Error fetching products by SKU:', error);
-        res.status(500).send('Failed to fetch products');
+        res.status(500).send({ message: "Failed to fetch products due to an internal error", error });
     }
-}
+};
+
+
 
 const deleteMultipleRows = async (req, res) => {
     try {
