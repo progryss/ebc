@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
-const { Schema } = mongoose;
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const tokenKey = process.env.SECRET_KEY;
+const { Schema } = mongoose;
 
 const userSchema = new Schema({
     name: {
@@ -11,7 +11,8 @@ const userSchema = new Schema({
     },
     email: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     password: {
         type: String,
@@ -20,17 +21,15 @@ const userSchema = new Schema({
     role: {
         type: Boolean
     },
-    tokens: [
-        {
-            token: {
-                type: String,
-                required: true
-            }
+    tokens: [{
+        token: {
+            type: String,
+            required: true
         }
-    ]
+    }]
 });
 
-// Define schema for Shopify products
+// Define schema for Shopify products with indexing
 const productSchema = new mongoose.Schema({
     productId: {
         type: String,
@@ -43,7 +42,8 @@ const productSchema = new mongoose.Schema({
     },
     handle: {
         type: String,
-        required: true
+        required: true,
+        index: true // Adding index
     },
     image_src: {
         type: String
@@ -56,7 +56,8 @@ const productSchema = new mongoose.Schema({
             type: String
         },
         sku: {
-            type: String
+            type: String,
+            index: true // Adding index on SKU
         },
         price: {
             type: String
@@ -76,20 +77,23 @@ const productSchema = new mongoose.Schema({
     }]
 });
 
-
-// Define schema for csv products
+// Define schema for csv products with indexing
 const csvDataSchema = new mongoose.Schema({
     make: {
-        type: String
+        type: String,
+        index: true // Adding index
     },
     model: {
-        type: String
+        type: String,
+        index: true // Adding index
     },
     engineType: {
-        type: String
+        type: String,
+        index: true // Adding index
     },
     year: {
-        type: String
+        type: String,
+        index: true // Adding index
     },
     bhp: {
         type: String
@@ -107,23 +111,23 @@ const csvDataSchema = new mongoose.Schema({
         type: String
     },
     sku: {
-        type: String
+        type: String,
+        index: true // Adding index
     },
     included: {
         type: Array
     },
-
 });
 
-// filter data
+// Filter data schema
 const filterDataSchema = new mongoose.Schema({
-    name:{
-        type:String
+    name: {
+        type: String
     },
-    options:{
-        type:Array
+    options: {
+        type: Array
     }
-})
+});
 
 userSchema.pre("save", async function (next) {
     if (this.isModified("password")) {
@@ -139,14 +143,14 @@ userSchema.methods.generateToken = async function () {
         await this.save();
         return userToken;
     } catch (error) {
-        return "error in token generation function";
+        console.error("error in token generation function:", error);
+        return error;
     }
 };
 
 const User = mongoose.model('User', userSchema);
 const Product = mongoose.model('Shopify Product', productSchema);
 const CsvData = mongoose.model('Csv Option', csvDataSchema);
-const filterData = mongoose.model('Filter Category',filterDataSchema)
-
+const filterData = mongoose.model('Filter Category', filterDataSchema);
 
 module.exports = { User, Product, CsvData, filterData };
