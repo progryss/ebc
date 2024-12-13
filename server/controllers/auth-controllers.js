@@ -710,6 +710,31 @@ const getCategories = async (req, res) => {
     }
 }
 
+const deleteSubCategory = async (req, res) => {
+    try {
+        const { category, subCategory } = req.body;
+        
+        // Use findOneAndUpdate with $pull to remove the option
+        const updatedCategory = await filterData.findOneAndUpdate(
+            { name: category },
+            { $pull: { options: {subCategory : subCategory } } },
+            { new: true }
+        );
+
+        if (!updatedCategory) {
+            return res.status(404).send('Category not found or option not found.');
+        }
+
+        res.status(200).send('Option deleted successfully from the category.');
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error deleting option from category',
+            error: error.message
+        });
+    }
+};
+
+
 module.exports = {
     validateUser,
     userLogin,
@@ -737,5 +762,6 @@ module.exports = {
     productWebhook,
     addCategory,
     getCategories,
-    updateCategory
+    updateCategory,
+    deleteSubCategory
 }; 

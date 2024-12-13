@@ -103,6 +103,25 @@ function FilterTags() {
         onDrop,
     });
 
+    const deleteSubCat = async (cat, subCat) => {
+        const payload = {
+            category: cat,
+            subCategory: subCat
+        };
+        const userResponse = window.confirm(`Are you sure you want to delete ( ${payload.subCategory} ) ?`);
+        if (!userResponse) return;
+        try {
+            let response = await axios.delete(`${serverUrl}/api/delete-subCategory`, {
+                data: payload,  // Using data property to send body
+                withCredentials: true
+            });
+            setR1(!r1);
+            console.log(response);
+        } catch (error) {
+            console.log('error deleting subCategory', error);
+        }
+    };
+
     return (
         <>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
@@ -223,21 +242,24 @@ function FilterTags() {
                         {filterData.map((element, index) => (
                             <li key={`${element.name}-${index}`} style={{ padding: '6px 10px', border: '1px solid silver' }}>
                                 {element.name}
-                                <ul>
+                                <ul style={{ paddingLeft: '0' }}>
                                     {element.options.map((option, index) => (
                                         <li key={`${option.labelText}-${index}`} style={{ padding: '6px 10px', display: 'flex', justifyContent: 'space-between' }}>
-                                            {option.subCategory}
+                                            <span>
+                                                <i className='fa fa-trash me-3' style={{ color: '#d52121', fontSize: '15px', cursor: 'pointer' }} onClick={() => deleteSubCat(element.name, option.subCategory)}></i>
+                                                {option.subCategory}
+                                            </span>
                                             {option.labelImage ? (
                                                 <img src={`${serverUrl}${option.labelImage}`} style={{ height: '25px' }} />
                                             ) : option.labelText && option.labelImage == null ? (
                                                 <span style={{
                                                     width: '100px',
                                                     background: `${option.labelBg}`,
-                                                    fontSize:'12px',
-                                                    fontWeight:'600',
-                                                    display:'flex',
-                                                    justifyContent:'center',
-                                                    alignItems:'center'
+                                                    fontSize: '12px',
+                                                    fontWeight: '600',
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center'
                                                 }}>
                                                     {option.labelText}
                                                 </span>
