@@ -105,7 +105,8 @@ const csvDataSchema = new mongoose.Schema({
         type: String
     },
     fitmentPosition: {
-        type: String
+        type: String,
+        index: true
     },
     discDiameter: {
         type: String
@@ -117,6 +118,15 @@ const csvDataSchema = new mongoose.Schema({
     included: {
         type: Array
     },
+});
+
+// Creating a text index
+csvDataSchema.index({
+    make: 'text',
+    model: 'text',
+    sku: 'text',
+    year: 'text',
+    fitmentPosition:'text'
 });
 
 // Filter data schema

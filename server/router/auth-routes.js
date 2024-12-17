@@ -106,5 +106,6 @@ router.post('/product-update-notify', Controler.productWebhook)
 router.post('/add-category', Controler.addCategory);
 router.get('/get-category', Controler.getCategories);
 router.put('/update-category',uploadImage.single('labelImage'), Controler.updateCategory);
+router.delete('/delete-subCategory',Controler.deleteSubCategory)
 
 module.exports = router; 

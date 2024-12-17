@@ -234,8 +234,11 @@ async function processCsvFile(filePath) {
         const stream = fs.createReadStream(filePath);
         const csvStream = csv.parse({ headers: true })
             .transform(data => {
+                let capitalizedMake = data.Make.trim().toLowerCase().replace(/\b\w/g, function(char) {
+                    return char.toUpperCase();
+                });
                 const transformed = {
-                    make: data.Make.trim(),
+                    make: capitalizedMake,
                     model: data.SubModel ? `${data.Model.trim()} ${data.SubModel.trim()}` : data.Model.trim(),
                     engineType: `${data.Engine.trim()} ${data.EngineType.trim()} ${data.FuelType.trim()}`,
                     year: data.YearNo.trim(),
@@ -354,19 +357,15 @@ const getCsvData = async (req, res) => {
     const limit = parseInt(req.query.limit) || 100;  // Default and maximum rows per page
     const skip = (page - 1) * limit;
     const search = req.query.search;
+
     // Build the query object
     let query = {};
     if (search) {
         query = {
-            $or: [
-                { make: new RegExp(search, 'i') },
-                { model: new RegExp(search, 'i') },
-                { engineType: new RegExp(search, 'i') },
-                // You can add more fields to search in:
-                { sku: new RegExp(search, 'i') }
-            ]
+            $text: { $search: search } // Using text search for efficiency
         };
     }
+
     try {
         // Find documents based on the query
         const csvData = await CsvData.find(query)
@@ -387,7 +386,6 @@ const getCsvData = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch csv data' });
     }
 };
-
 
 const getCsvDataMakes = async (req, res) => {
     try {
@@ -710,6 +708,31 @@ const getCategories = async (req, res) => {
     }
 }
 
+const deleteSubCategory = async (req, res) => {
+    try {
+        const { category, subCategory } = req.body;
+        
+        // Use findOneAndUpdate with $pull to remove the option
+        const updatedCategory = await filterData.findOneAndUpdate(
+            { name: category },
+            { $pull: { options: {subCategory : subCategory } } },
+            { new: true }
+        );
+
+        if (!updatedCategory) {
+            return res.status(404).send('Category not found or option not found.');
+        }
+
+        res.status(200).send('Option deleted successfully from the category.');
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error deleting option from category',
+            error: error.message
+        });
+    }
+};
+
+
 module.exports = {
     validateUser,
     userLogin,
@@ -737,5 +760,6 @@ module.exports = {
     productWebhook,
     addCategory,
     getCategories,
-    updateCategory
+    updateCategory,
+    deleteSubCategory
 }; 
