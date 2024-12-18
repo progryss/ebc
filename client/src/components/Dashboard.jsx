@@ -361,6 +361,10 @@ export default function Dashboard() {
     return pageNumbers;
   };
 
+  function capitalizeWords(str) {
+    return str.toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+  }  
+
   return (
     <>
       <div className="container-fluid customer-container">
@@ -556,7 +560,7 @@ export default function Dashboard() {
                             } else {
                               return (
                                 <td key={`row-${index}`} >
-                                  <span className={column.id}> {column.id === 'included' ? row[column.id].join(', ') : row[column.id]} </span>
+                                  <span className={column.id}> {column.id === 'included' ? row[column.id].join(', ') : column.id === 'make' ? row[column.id].toUpperCase() : column.id === 'model' ? row[column.id].toUpperCase() :  column.id === 'engineType' ? capitalizeWords(row[column.id]) : row[column.id] } </span>
                                 </td>
                               );
                             }

@@ -238,9 +238,9 @@ async function processCsvFile(filePath) {
                     return char.toUpperCase();
                 });
                 const transformed = {
-                    make: capitalizedMake,
-                    model: data.SubModel ? `${data.Model.trim()} ${data.SubModel.trim()}` : data.Model.trim(),
-                    engineType: `${data.Engine.trim()} ${data.EngineType.trim()} ${data.FuelType.trim()}`,
+                    make:  data.Make.trim().toLowerCase(),
+                    model: data.SubModel ? `${data.Model.trim()} ${data.SubModel.trim()}`.toLowerCase() : data.Model.trim().toLowerCase(),
+                    engineType: `${data.Engine.trim()} ${data.EngineType.trim()} ${data.FuelType.trim()}`.toLowerCase(),
                     year: data.YearNo.trim(),
                     bhp: data['BHP'] ? data['BHP'].trim() : '',
                     frontBrakeCaliperMake: data.FrontBrakeCaliperMake ? data.FrontBrakeCaliperMake.trim() : '',
