@@ -365,6 +365,22 @@ export default function Dashboard() {
     return str.toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
   }  
 
+  const deleteDuplicateCsv = async()=>{
+    const userResponse = window.confirm('Are you sure you want to delete?');
+    if (!userResponse) return;
+    const toastId = showProgressToast('Deleting Duplicates');
+    updateProgress(toastId, 'loader', 'Deleting Duplicates');
+    try {
+      const response = await axios.delete(`${serverUrl}/api/remove-duplicateCsv`);
+      if(response.status === 200){
+        refreshIt()
+        finalizeToast(toastId, true, response.data);
+      }
+    } catch (error) {
+      console.log('error in removing duplicate csv')
+      finalizeToast(toastId, false, '', 'Failed to delete Csv Duplicates.');
+    }
+  }
   return (
     <>
       <div className="container-fluid customer-container">
@@ -464,7 +480,8 @@ export default function Dashboard() {
                   <AddRow refresh={refreshIt} close={handleClose} />
                 </div>
               </Modal>
-              <Button variant="contained" onClick={deleteRowFromTable} className="mb-3"><i className="fa fa-trash me-1"></i> Delete Rows</Button>
+              <Button variant="contained" onClick={deleteRowFromTable} className="mb-3 me-2"><i className="fa fa-trash me-1"></i> Delete Rows</Button>
+              <Button variant="contained" onClick={deleteDuplicateCsv} className="mb-3"><i className="fa fa-trash me-1"></i> Delete Duplicate Entries</Button>
             </div>
 
             <div className="table-responsive customerTable">
