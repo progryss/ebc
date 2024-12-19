@@ -1,7 +1,7 @@
 import React from 'react';
 import Box from '@mui/material/Box';
 import CustomizedMenus from './Select.components';
-// import logo from '../images/ickle.png';
+import logo from '../images/logo.png'
 function AppHeader({ validUser }) {
 
     const headerWrapperCss = {
@@ -14,8 +14,7 @@ function AppHeader({ validUser }) {
     return (
         <>
             <Box className='header' sx={headerWrapperCss}>
-                {/* <img src={logo} alt='' width='180' /> */}
-                <div><h3>EBC Brakes</h3></div>
+                <div><img src={logo} alt='' width='130' /></div>
                 <CustomizedMenus user={validUser} />
             </Box>
         </>

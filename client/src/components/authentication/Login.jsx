@@ -13,7 +13,7 @@ import axios from 'axios';
 import { IconButton, InputAdornment } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-// import logo from '../../images/ickle.png';
+import logo from '../../images/logo.png';
 import { useProgressToast } from '../customHooks/useProgressToast';
 
 const serverUrl = process.env.REACT_APP_SERVER_URL;
@@ -154,8 +154,7 @@ export default function Login(props) {
       <SignInContainer direction="column" justifyContent="space-between" height="100vh" >
         <Card variant="outlined">
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            {/* <img src={logo} alt='' width='260' /> */}
-            <h3>EBC Brakes</h3>
+            <img src={logo} alt='' width='150' />
           </Box>
           <Typography
             component="h1"
