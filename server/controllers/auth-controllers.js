@@ -732,6 +732,51 @@ const deleteSubCategory = async (req, res) => {
     }
 };
 
+const removeAllDuplicates = async (req, res) => {
+    try {
+        // Step 1: Identify duplicates
+        const duplicates = await CsvData.aggregate([
+            {
+                $group: {
+                    _id: { 
+                        make: "$make", 
+                        model: "$model", 
+                        engineType: "$engineType", 
+                        year: "$year", 
+                        bhp: "$bhp",
+                        frontBrakeCaliperMake: "$frontBrakeCaliperMake",
+                        rearBrakeCaliperMake: "$rearBrakeCaliperMake",
+                        fitmentPosition: "$fitmentPosition",
+                        discDiameter: "$discDiameter",
+                        sku: "$sku",
+                        included: "$included"
+                    },
+                    docIds: { $addToSet: "$_id" },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $match: {
+                    count: { $gt: 1 } // filters groups having more than one document
+                }
+            }
+        ]);
+
+        // Step 2: Remove duplicates
+        let countRemoved = 0;
+        for (let duplicate of duplicates) {
+            // Keep the first document and remove the rest
+            const idsToRemove = duplicate.docIds.slice(1); // Skip the first element to keep
+            await CsvData.deleteMany({ _id: { $in: idsToRemove } });
+            countRemoved += idsToRemove.length;
+        }
+
+        res.status(200).send(`${countRemoved} Duplicates Entries Removed.`);
+    } catch (error) {
+        res.status(500).send("Error removing duplicates: " + error.message);
+    }
+};
+
 
 module.exports = {
     validateUser,
@@ -761,5 +806,6 @@ module.exports = {
     addCategory,
     getCategories,
     updateCategory,
-    deleteSubCategory
+    deleteSubCategory,
+    removeAllDuplicates
 }; 
