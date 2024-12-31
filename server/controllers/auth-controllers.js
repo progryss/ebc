@@ -949,7 +949,7 @@ async function updateShopifyProductStock(element, locationId) {
         console.log(payload)
         const response = await axios.post(url, payload, { headers });
         // Check the API call limit status and adjust the delay accordingly
-        console.log(response)
+        console.log(response.data)
         const apiCallLimit = response.headers['x-shopify-shop-api-call-limit'];
         const [usedCalls, maxCalls] = apiCallLimit.split('/').map(Number);
         if (maxCalls - usedCalls < 10) { // If close to limit, increase delay
