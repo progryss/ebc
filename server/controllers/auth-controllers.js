@@ -779,10 +779,12 @@ const removeAllDuplicates = async (req, res) => {
 };
 
 const updateInventoryInStore = async (req, res) => {
+    req.setTimeout(0);
     try {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
+        res.flushHeaders(); 
 
         // Get API Token from Gravite
         const tokenResponse = await axios.post(`${process.env.GRAVITE_API_URL}`, {
