@@ -841,14 +841,13 @@ const updateInventoryInStore = async (req, res) => {
                 count++;
                 console.log('batch - ', count)
                 const skuList = batch.map(element => ({ code: element.sku }));
-
+                
                 const result = await sendBatchRequest(skuList, apiToken);
                 if (result.connection !== 'OK') {
                     throw new Error("Error fetching stock levels: " + result.data.error);
                 }
 
                 const updatedInventory = Object.entries(result.product_stock);
-
                 // creating new objects to set the updated inventory in store
                 let inventoryObject = batch.map((element) => {
                     let c = updatedInventory.find(ele => ele[0] == element.sku)
@@ -865,9 +864,10 @@ const updateInventoryInStore = async (req, res) => {
                 })
 
                 inventoryObject = inventoryObject.filter(element => element != undefined)
+                console.log('inventory to store', inventoryObject.length)
 
                 const batchData = await Promise.allSettled(inventoryObject.map(element => element && updateShopifyProductStock(element, locationId)));
-
+                console.log('store updates',batchData.length)
                 const BatchResults = {
                     updatedSku: updatedResults += batchData.length,
                     failedSku: failedSku,
@@ -946,10 +946,8 @@ async function updateShopifyProductStock(element, locationId) {
     await delay(100);
 
     try {
-        console.log(payload)
         const response = await axios.post(url, payload, { headers });
         // Check the API call limit status and adjust the delay accordingly
-        console.log(response.data)
         const apiCallLimit = response.headers['x-shopify-shop-api-call-limit'];
         const [usedCalls, maxCalls] = apiCallLimit.split('/').map(Number);
         if (maxCalls - usedCalls < 10) { // If close to limit, increase delay
@@ -965,6 +963,7 @@ async function updateShopifyProductStock(element, locationId) {
             return updateShopifyProductStock(element, locationId); // Retry the request
         }
         console.error('Error updating product stock:', error);
+        console.log(payload)
         throw error;
     }
 }
