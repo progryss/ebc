@@ -812,7 +812,7 @@ const updateInventoryInStore = async (req, res) => {
                 { "variants.sku": { $ne: "" } },
                 { "variants.sku": { $ne: null } }
             ]
-        })
+        }).limit(1000)
 
         const allSkuArr = products.flatMap(product => product.variants.map(variant => variant.sku ? ({
             sku: variant.sku,
@@ -827,7 +827,7 @@ const updateInventoryInStore = async (req, res) => {
         async function processBatches(allSkus, apiToken, res) {
 
             let results = [];
-            const batches = chunkArray(allSkus, 250);
+            const batches = chunkArray(allSkus, 30);
             const initialData = {
                 totalSku: allSkuArr.length,
                 processStartTime: timeStart,
@@ -839,7 +839,7 @@ const updateInventoryInStore = async (req, res) => {
 
             for (const batch of batches) {
                 count++;
-
+                console.log('batch - ', count)
                 const skuList = batch.map(element => ({ code: element.sku }));
 
                 const result = await sendBatchRequest(skuList, apiToken);
@@ -949,14 +949,14 @@ async function updateShopifyProductStock(element, locationId) {
         const response = await axios.post(url, payload, { headers });
         // Check the API call limit status and adjust the delay accordingly
         const apiCallLimit = response.headers['x-shopify-shop-api-call-limit'];
-        console.log(apiCallLimit)
         const [usedCalls, maxCalls] = apiCallLimit.split('/').map(Number);
-        if (maxCalls - usedCalls < 5) { // If close to limit, increase delay
+        if (maxCalls - usedCalls < 10) { // If close to limit, increase delay
             await delay(1000);
         }
         if (response.status === 200) {
             return response.data;
         }
+        console.log(response)
     } catch (error) {
         if (error.response && error.response.status === 429) {
             // If hit with a rate limit error, increase delay significantly
