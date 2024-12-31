@@ -7,6 +7,7 @@ import AuthGuard from './components/authentication/userProtected';
 import Dashboard from './components/Dashboard';
 import Users from './components/users';
 import FilterTags from './components/filterTags';
+import InventoryStore from './components/inventoryStore';
 
 const theme = createTheme({
   typography: {
@@ -56,6 +57,15 @@ const router = createBrowserRouter([
       <AuthGuard>
         <AppHeader />
         <FilterTags />
+      </AuthGuard>
+    )
+  },
+  {
+    path: "/inventory-store",
+    element: (
+      <AuthGuard>
+        <AppHeader />
+        <InventoryStore />
       </AuthGuard>
     )
   }
