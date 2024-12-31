@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useProgressToast } from './customHooks/useProgressToast';
 import axios from 'axios';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import InventoryIcon from '@mui/icons-material/Inventory';
 
 const serverUrl = process.env.REACT_APP_SERVER_URL;
 
@@ -107,6 +108,11 @@ export default function CustomizedMenus({ user }) {
     setAnchorEl(null);
   }
 
+  const inventoryStore = () => {
+    navigate('/inventory-store')
+    setAnchorEl(null);
+  }
+
   return (
     <div>
       <Button
@@ -146,6 +152,12 @@ export default function CustomizedMenus({ user }) {
           <MenuItem onClick={userStore} disableRipple>
             <Person4Icon />
             Users
+          </MenuItem>
+        )}
+        {user.role && (
+          <MenuItem onClick={inventoryStore} disableRipple>
+            <InventoryIcon />
+            Inventory
           </MenuItem>
         )}
         <MenuItem onClick={handleLogout} disableRipple>

@@ -1,6 +1,6 @@
 require('dotenv').config();
 const bcrypt = require("bcryptjs");
-const { User, Product, CsvData, filterData } = require('../models/user-models')
+const { User, Product, CsvData, filterData, inventoryHistory } = require('../models/user-models')
 const axios = require('axios');
 const async = require('async');
 
@@ -176,8 +176,9 @@ const syncProductFromShopify = async (req, res) => {
                         price: variant.price,
                         compare_at_price: variant.compare_at_price,
                         image_id: variant.image_id,
+                        inventory_item_id: variant.inventory_item_id,
                         inventory_quantity: variant.inventory_quantity ?? 0,
-                        inventory_policy: variant.inventory_policy ?? 'deny'
+                        inventory_policy: variant.inventory_policy ?? 'deny',
                     })) ?? []
                 };
 
@@ -234,11 +235,11 @@ async function processCsvFile(filePath) {
         const stream = fs.createReadStream(filePath);
         const csvStream = csv.parse({ headers: true })
             .transform(data => {
-                let capitalizedMake = data.Make.trim().toLowerCase().replace(/\b\w/g, function(char) {
+                let capitalizedMake = data.Make.trim().toLowerCase().replace(/\b\w/g, function (char) {
                     return char.toUpperCase();
                 });
                 const transformed = {
-                    make:  data.Make.trim().toLowerCase(),
+                    make: data.Make.trim().toLowerCase(),
                     model: data.SubModel ? `${data.Model.trim()} ${data.SubModel.trim()}`.toLowerCase() : data.Model.trim().toLowerCase(),
                     engineType: `${data.Engine.trim()} ${data.EngineType.trim()} ${data.FuelType.trim()}`.toLowerCase(),
                     year: data.YearNo.trim(),
@@ -711,11 +712,11 @@ const getCategories = async (req, res) => {
 const deleteSubCategory = async (req, res) => {
     try {
         const { category, subCategory } = req.body;
-        
+
         // Use findOneAndUpdate with $pull to remove the option
         const updatedCategory = await filterData.findOneAndUpdate(
             { name: category },
-            { $pull: { options: {subCategory : subCategory } } },
+            { $pull: { options: { subCategory: subCategory } } },
             { new: true }
         );
 
@@ -738,11 +739,11 @@ const removeAllDuplicates = async (req, res) => {
         const duplicates = await CsvData.aggregate([
             {
                 $group: {
-                    _id: { 
-                        make: "$make", 
-                        model: "$model", 
-                        engineType: "$engineType", 
-                        year: "$year", 
+                    _id: {
+                        make: "$make",
+                        model: "$model",
+                        engineType: "$engineType",
+                        year: "$year",
                         bhp: "$bhp",
                         frontBrakeCaliperMake: "$frontBrakeCaliperMake",
                         rearBrakeCaliperMake: "$rearBrakeCaliperMake",
@@ -777,6 +778,214 @@ const removeAllDuplicates = async (req, res) => {
     }
 };
 
+const updateInventoryInStore = async (req, res) => {
+    try {
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        // Get API Token from Gravite
+        const tokenResponse = await axios.post(`${process.env.GRAVITE_API_URL}`, {
+            api_credentials: {
+                app_user: process.env.GRAVITE_API_USER,
+                app_key: process.env.GRAVITE_API_KEY
+            },
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (tokenResponse.data.connection !== 'OK') {
+            throw new Error("Error retrieving token: " + tokenResponse.data.error);
+        }
+        const apiToken = tokenResponse.data.token;
+
+        // Get Location Id from Store
+        const locationResponse = await axios.get(`${process.env.STORE_API_URL}/locations.json`, {
+            headers: { 'X-Shopify-Access-Token': process.env.STORE_API_PASSWORD }
+        });
+        const locationId = locationResponse.data.locations[0].id;
+
+        // Fetch SKUs and inventory item of store product variants from db
+        const products = await Product.find({
+            $and: [
+                { "variants.sku": { $ne: "" } },
+                { "variants.sku": { $ne: null } }
+            ]
+        })
+
+        const allSkuArr = products.flatMap(product => product.variants.map(variant => variant.sku ? ({
+            sku: variant.sku,
+            inventory_item_id: variant.inventory_item_id
+        }) : ''));
+
+        let count = 0;
+        let updatedResults = 0;
+        let timeStart = getCurrentDateTime();
+        let failedSku = []
+
+        async function processBatches(allSkus, apiToken, res) {
+
+            let results = [];
+            const batches = chunkArray(allSkus, 250);
+            const initialData = {
+                totalSku: allSkuArr.length,
+                processStartTime: timeStart,
+                updatedSku: "0",
+                failedSku: [],
+            }
+            // initially send notification process start
+            res.write(`data: ${JSON.stringify({ message: `process start`, result: initialData })}\n\n`);
+
+            for (const batch of batches) {
+                count++;
+
+                const skuList = batch.map(element => ({ code: element.sku }));
+
+                const result = await sendBatchRequest(skuList, apiToken);
+                if (result.connection !== 'OK') {
+                    throw new Error("Error fetching stock levels: " + result.data.error);
+                }
+
+                const updatedInventory = Object.entries(result.product_stock);
+
+                // creating new objects to set the updated inventory in store
+                let inventoryObject = batch.map((element) => {
+                    let c = updatedInventory.find(ele => ele[0] == element.sku)
+                    if (c) {
+                        let obj = {
+                            sku: element.sku,
+                            inventory_item_id: element.inventory_item_id,
+                            available: parseInt(c[1].freestock).toString()
+                        }
+                        return obj;
+                    } else {
+                        failedSku.push(element.sku)
+                    }
+                })
+
+                inventoryObject = inventoryObject.filter(element => element != undefined)
+
+                const batchData = await Promise.allSettled(inventoryObject.map(element => element && updateShopifyProductStock(element, locationId)));
+
+                const BatchResults = {
+                    updatedSku: updatedResults += batchData.length,
+                    failedSku: failedSku,
+                    totalSku: allSkuArr.length,
+                    processStartTime: timeStart
+                }
+
+                results.push(batchData);
+                res.write(`data: ${JSON.stringify({ message: `Batch processed - ${count}`, result: BatchResults })}\n\n`);
+            }
+            return results;
+        }
+
+        function chunkArray(array, chunkSize) {
+            const chunks = [];
+            for (let i = 0; i < array.length; i += chunkSize) {
+                chunks.push(array.slice(i, i + chunkSize));
+            }
+            return chunks;
+        }
+
+        // function to fetch fresh inventory from thirdparty
+        async function sendBatchRequest(skuList, apiToken) {
+            try {
+                const response = await axios.post(`${process.env.GRAVITE_API_URL}`, {
+                    api_credentials: {
+                        app_user: process.env.GRAVITE_API_USER,
+                        app_key: process.env.GRAVITE_API_KEY,
+                        app_token: apiToken
+                    },
+                    product_codes: skuList
+                });
+                return response.data; // Assuming API returns JSON data
+            } catch (error) {
+                console.error('Failed to fetch stock levels:', error);
+                throw error; // or handle the error as needed
+            }
+        }
+
+        await processBatches(allSkuArr, apiToken, res);
+
+        const finalResults = {
+            totalSku: allSkuArr.length,
+            updatedSku: updatedResults,
+            processStartTime: timeStart,
+            processEndTime: getCurrentDateTime(),
+            failedSku: failedSku
+        }
+
+        const newInventoryHistory = new inventoryHistory(finalResults);
+        newInventoryHistory.save()
+
+        res.write(`data: ${JSON.stringify({ message: `All batches processed successfully`, result: finalResults })}\n\n`);
+        res.end();
+
+    } catch (error) {
+        res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+        res.end();
+    }
+};
+
+async function updateShopifyProductStock(element, locationId) {
+    const url = `${process.env.STORE_API_URL}/inventory_levels/set.json`;
+    const headers = {
+        'X-Shopify-Access-Token': process.env.STORE_API_PASSWORD
+    };
+    const payload = {
+        location_id: locationId,
+        inventory_item_id: element.inventory_item_id,
+        available: element.available
+    };
+
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    // Initial delay before the request
+    await delay(0);
+
+    try {
+        const response = await axios.post(url, payload, { headers });
+        // Check the API call limit status and adjust the delay accordingly
+        const apiCallLimit = response.headers['x-shopify-shop-api-call-limit'];
+        const [usedCalls, maxCalls] = apiCallLimit.split('/').map(Number);
+        if (maxCalls - usedCalls < 5) { // If close to limit, increase delay
+            await delay(1000);
+        }
+        if (response.status === 200) {
+            return response.data;
+        }
+    } catch (error) {
+        if (error.response && error.response.status === 429) {
+            // If hit with a rate limit error, increase delay significantly
+            await delay(2000);
+            return updateShopifyProductStock(element, locationId); // Retry the request
+        }
+        console.error('Error updating product stock:', error);
+        throw error;
+    }
+}
+
+const getCurrentDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const date = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${date} ${hours}:${minutes}:${seconds}`;
+};
+
+const getInventoryHistory = async (req, res) => {
+    try {
+        const response = await inventoryHistory.find();
+        res.status(200).send(response)
+    } catch (error) {
+        res.status(500).send('error in getting inventory history', error)
+    }
+}
 
 module.exports = {
     validateUser,
@@ -807,5 +1016,7 @@ module.exports = {
     getCategories,
     updateCategory,
     deleteSubCategory,
-    removeAllDuplicates
+    removeAllDuplicates,
+    updateInventoryInStore,
+    getInventoryHistory
 }; 

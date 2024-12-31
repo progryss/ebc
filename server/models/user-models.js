@@ -68,6 +68,9 @@ const productSchema = new mongoose.Schema({
         image_id: {
             type: String
         },
+        inventory_item_id: {
+            type: String
+        },
         inventory_quantity: {
             type: String
         },
@@ -126,7 +129,7 @@ csvDataSchema.index({
     model: 'text',
     sku: 'text',
     year: 'text',
-    fitmentPosition:'text'
+    fitmentPosition: 'text'
 });
 
 // Filter data schema
@@ -138,6 +141,24 @@ const filterDataSchema = new mongoose.Schema({
         type: Array
     }
 });
+
+const inventoryHistorySchema = new mongoose.Schema({
+    processStartTime: {
+        type: String
+    },
+    processEndTime: {
+        type: String
+    },
+    totalSku: {
+        type: String
+    },
+    updatedSku: {
+        type: String
+    },
+    failedSku: {
+        type : Array
+    }
+})
 
 userSchema.pre("save", async function (next) {
     if (this.isModified("password")) {
@@ -162,5 +183,6 @@ const User = mongoose.model('User', userSchema);
 const Product = mongoose.model('Shopify Product', productSchema);
 const CsvData = mongoose.model('Csv Option', csvDataSchema);
 const filterData = mongoose.model('Filter Category', filterDataSchema);
+const inventoryHistory = mongoose.model('Inventory History', inventoryHistorySchema)
 
-module.exports = { User, Product, CsvData, filterData };
+module.exports = { User, Product, CsvData, filterData, inventoryHistory };
