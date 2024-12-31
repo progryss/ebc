@@ -946,8 +946,10 @@ async function updateShopifyProductStock(element, locationId) {
     await delay(100);
 
     try {
+        console.log(payload)
         const response = await axios.post(url, payload, { headers });
         // Check the API call limit status and adjust the delay accordingly
+        console.log(response)
         const apiCallLimit = response.headers['x-shopify-shop-api-call-limit'];
         const [usedCalls, maxCalls] = apiCallLimit.split('/').map(Number);
         if (maxCalls - usedCalls < 10) { // If close to limit, increase delay
@@ -956,7 +958,6 @@ async function updateShopifyProductStock(element, locationId) {
         if (response.status === 200) {
             return response.data;
         }
-        console.log(response)
     } catch (error) {
         if (error.response && error.response.status === 429) {
             // If hit with a rate limit error, increase delay significantly
