@@ -814,7 +814,7 @@ const updateInventoryInStore = async (req, res) => {
                 { "variants.sku": { $ne: "" } },
                 { "variants.sku": { $ne: null } }
             ]
-        }).limit(1000)
+        })
 
         const allSkuArr = products.flatMap(product => product.variants.map(variant => variant.sku ? ({
             sku: variant.sku,
@@ -829,7 +829,7 @@ const updateInventoryInStore = async (req, res) => {
         async function processBatches(allSkus, apiToken, res) {
 
             let results = [];
-            const batches = chunkArray(allSkus, 30);
+            const batches = chunkArray(allSkus, 250);
             const initialData = {
                 totalSku: allSkuArr.length,
                 processStartTime: timeStart,
