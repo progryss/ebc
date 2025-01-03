@@ -109,7 +109,7 @@ router.put('/update-category',uploadImage.single('labelImage'), Controler.update
 router.delete('/delete-subCategory',Controler.deleteSubCategory);
 router.delete('/remove-duplicateCsv',Controler.removeAllDuplicates);
 
-router.get('/test',Controler.updateInventoryInStore)
-router.get('/get-inventory-history',Controler.getInventoryHistory)
+router.get('/fresh-inventory',Controler.updateInventoryInDB)
+// router.get('/get-inventory-history',Controler.getInventoryHistory)
 
 module.exports = router; 
