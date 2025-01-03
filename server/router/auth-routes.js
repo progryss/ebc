@@ -6,6 +6,8 @@ const fs = require('fs');
 const Controler = require('../controllers/auth-controllers');
 const authenticate = require('../middlewares/authenticate');
 
+const { addClient, removeClient } = require('../sseManager');
+
 // Ensure upload directories exist
 const ensureDirectoryExistence = (dirPath) => {
     if (!fs.existsSync(dirPath)) {
@@ -105,11 +107,28 @@ router.post('/product-update-notify', Controler.productWebhook)
 
 router.post('/add-category', Controler.addCategory);
 router.get('/get-category', Controler.getCategories);
-router.put('/update-category',uploadImage.single('labelImage'), Controler.updateCategory);
-router.delete('/delete-subCategory',Controler.deleteSubCategory);
-router.delete('/remove-duplicateCsv',Controler.removeAllDuplicates);
+router.put('/update-category', uploadImage.single('labelImage'), Controler.updateCategory);
+router.delete('/delete-subCategory', Controler.deleteSubCategory);
+router.delete('/remove-duplicateCsv', Controler.removeAllDuplicates);
 
-router.get('/fresh-inventory',Controler.updateInventoryInDB)
+router.get('/fresh-inventory', Controler.updateInventory)
 // router.get('/get-inventory-history',Controler.getInventoryHistory)
+
+router.get('/events', (req, res) => {
+    const clientId = Date.now();
+    const headers = {
+        'Content-Type': 'text/event-stream',
+        'Connection': 'keep-alive',
+        'Cache-Control': 'no-cache'
+    };
+    res.writeHead(200, headers);
+
+    addClient(clientId, res); // Add client to the manager
+
+    req.on('close', () => {
+        removeClient(clientId); // Remove client when they disconnect
+        res.end();
+    });
+});
 
 module.exports = router; 

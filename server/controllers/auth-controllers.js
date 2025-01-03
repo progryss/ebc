@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const { User, Product, CsvData, filterData, inventoryData } = require('../models/user-models')
 const axios = require('axios');
 const async = require('async');
+const { sendToAll } = require('../sseManager');
 
 // for csv file upload
 const fs = require('fs');
@@ -804,7 +805,7 @@ const updateInventoryInDB = async (req, res) => {
         });
         const locationId = locationResponse.data.locations[0].id;
         console.log('-----------')
-        console.log('Store Location ID - ', apiToken)
+        console.log('Store Location ID - ', locationId)
 
         // Fetch SKUs and inventory item of store product variants from db
         const products = await Product.find({
@@ -812,7 +813,7 @@ const updateInventoryInDB = async (req, res) => {
                 { "variants.sku": { $ne: "" } },
                 { "variants.sku": { $ne: null } }
             ]
-        })
+        }).limit(1000)
 
         const allSkuArr = products.flatMap(product => product.variants.map(variant => variant.sku ? ({
             sku: variant.sku,
@@ -821,111 +822,225 @@ const updateInventoryInDB = async (req, res) => {
         console.log('-----------')
         console.log('Total products - ', allSkuArr.length)
 
-        async function processBatches(allSkus, apiToken) {
-
-            let result = {
-                batchCount:0,
-                failedSku:[],
-                updatedSku:0
-            }
-
-            const batches = chunkArray(allSkus, 250);
-
-            for (const batch of batches) {
-                result.batchCount++;
-
-                console.log('-----------')
-                console.log(`batch - ${result.batchCount}`)
-
-                const skuList = batch.map(element => ({ code: element.sku }));
-
-                console.log('-----------')
-                console.log('Sku To Third Party App - ', skuList.length)
-
-                const resultFromThirdParty = await sendBatchRequest(skuList, apiToken);
-                if (resultFromThirdParty.connection !== 'OK') {
-                    throw new Error("Error fetching stock levels: " + resultFromThirdParty.data.error);
-                }
-
-                const updatedInventory = Object.entries(resultFromThirdParty.product_stock);
-
-                // creating new objects to set the updated inventory in store
-                let inventoryObject = batch.map((element) => {
-                    let c = updatedInventory.find(ele => ele[0] == element.sku)
-                    if (c) {
-                        let obj = {
-                            sku: element.sku,
-                            inventory_item_id: element.inventory_item_id,
-                            available: parseInt(c[1].freestock),
-                            locationId: locationId
-                        }
-                        return obj;
-                    } else {
-                        result.failedSku.push(element.sku)
-                    }
-                })
-
-                inventoryObject = inventoryObject.filter(element => element != undefined)
-
-                inventoryObject.forEach(async(element)=>{
-
-                    await inventoryData.findOneAndUpdate(
-                        {inventory_item_id:element.inventory_item_id},
-                        element,
-                        {upsert:true,new:true}
-                    )
-
-                })
-
-                result.updatedSku += inventoryObject.length;
-                console.log('-----------')
-                console.log('Inventory Data Saved To DB - ', inventoryObject.length)
-
-                console.log('-----------')
-                console.log('Failed Sku - ', result.failedSku.length)
-
-            }
-
-            return result;
-
+        let notificationResult = {
+            startTime: getCurrentDateTime(),
+            totalSku: allSkuArr.length,
+            updatedSkuDb: 0,
+            failedSkuDb: 0,
+            endTime: '',
         }
+        // Notify clients that the batch process has started
+        sendToAll({ message: "Batch process started", result: notificationResult });
 
-        let result = await processBatches(allSkuArr, apiToken);
+        let result = await processBatches(allSkuArr, apiToken, locationId, notificationResult);
 
         console.log('-----------------------------')
         console.log(result)
         console.log(result.failedSku.length)
 
-        function chunkArray(array, chunkSize) {
-            const chunks = [];
-            for (let i = 0; i < array.length; i += chunkSize) {
-                chunks.push(array.slice(i, i + chunkSize));
-            }
-            return chunks;
-        }
-
-        // function to fetch fresh inventory from thirdparty
-        async function sendBatchRequest(skuList, apiToken) {
-            try {
-                const response = await axios.post(`${process.env.GRAVITE_API_URL}`, {
-                    api_credentials: {
-                        app_user: process.env.GRAVITE_API_USER,
-                        app_key: process.env.GRAVITE_API_KEY,
-                        app_token: apiToken
-                    },
-                    product_codes: skuList
-                });
-                return response.data; // Assuming API returns JSON data
-            } catch (error) {
-                console.error('Failed to fetch stock levels:', error);
-                throw error; // or handle the error as needed
-            }
-        }
+        // Notify clients that all batches are completed
+        notificationResult.endTime = getCurrentDateTime()
+        sendToAll({ message: "All batches completed", result: notificationResult });
 
     } catch (error) {
-        console.log(error)
+        console.error(error);
+        res.status(500).send("Failed to update inventory");
     }
 
+};
+
+const updateInventoryInStore = async (req, res) => {
+
+    try {
+        // Fetch SKUs and inventory item of store product variants from db
+        const freshInventoryList = await inventoryData.find().limit(1000);
+        const batches = chunkArray(freshInventoryList, 200);
+
+        let notificationResult = {
+            startTimeStore: getCurrentDateTime(),
+            updatedSku: 0,
+            failedSku: 0,
+            endTimeStore: ''
+        }
+
+        sendToAll({ message: "Shopify Batch process started", result: notificationResult });
+
+        let count = 0;
+        for (const batch of batches) {
+            count++;
+            const batchData = await Promise.allSettled(batch.map(element => element && updateShopifyProductStock(element)));
+            results.push(batchData)
+            notificationResult.updatedSku += batchData.length
+            sendToAll({ message: `Shopify Batch processed ${count}`, result: notificationResult });
+        }
+
+        notificationResult.endTimeStore = getCurrentDateTime()
+        sendToAll({ message: "All Shopify Batch processed", result: notificationResult });
+
+    } catch (error) {
+        console.log('error in updating shopify inventory', error)
+    }
+};
+
+const updateInventory = async (req, res) => {
+    try {
+        updateInventoryInDB().then(result => {
+            updateInventoryInStore()
+        }).catch(err => {
+            console.log(err)
+        });
+        res.status(202).send("process started")
+    } catch (error) {
+        res.status(500).send(error)
+    }
+}
+
+async function processBatches(allSkus, apiToken, locationId, notificationResult) {
+
+    let result = {
+        batchCount: 0,
+        failedSku: [],
+        updatedSku: 0
+    }
+
+    const batches = chunkArray(allSkus, 200);
+
+    for (const batch of batches) {
+        result.batchCount++;
+
+        console.log('-----------')
+        console.log(`batch - ${result.batchCount}`)
+
+        // Notify clients that a batch has started
+        sendToAll({ message: `Batch processing ${result.batchCount}`, result: notificationResult });
+
+        const skuList = batch.map(element => ({ code: element.sku }));
+
+        console.log('-----------')
+        console.log('Sku To Third Party App - ', skuList.length)
+
+        const resultFromThirdParty = await sendBatchRequest(skuList, apiToken);
+        if (resultFromThirdParty.connection !== 'OK') {
+            throw new Error("Error fetching stock levels: " + resultFromThirdParty.data.error);
+        }
+
+        const updatedInventory = Object.entries(resultFromThirdParty.product_stock);
+
+        // creating new objects to set the updated inventory in store
+        let inventoryObject = batch.map((element) => {
+            let c = updatedInventory.find(ele => ele[0] == element.sku)
+            if (c) {
+                let obj = {
+                    sku: element.sku,
+                    inventory_item_id: element.inventory_item_id,
+                    available: parseInt(c[1].freestock),
+                    locationId: locationId
+                }
+                return obj;
+            } else {
+                result.failedSku.push(element.sku)
+            }
+        }).filter(element => element != undefined)
+
+        inventoryObject.forEach(async (element) => {
+
+            await inventoryData.findOneAndUpdate(
+                { inventory_item_id: element.inventory_item_id },
+                element,
+                { upsert: true, new: true }
+            )
+
+        })
+
+        result.updatedSku += inventoryObject.length;
+        console.log('-----------')
+        console.log('Inventory Data Saved To DB - ', inventoryObject.length)
+
+        console.log('-----------')
+        console.log('Failed Sku - ', result.failedSku.length)
+        notificationResult.updatedSkuDb += inventoryObject.length;
+        notificationResult.failedSkuDb = result.failedSku.length;
+        sendToAll({ message: `Batch processed ${result.batchCount}`, result: notificationResult });
+
+    }
+
+    return result;
+
+}
+
+function chunkArray(array, chunkSize) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+}
+
+// function to fetch fresh inventory from thirdparty
+async function sendBatchRequest(skuList, apiToken) {
+    try {
+        const response = await axios.post(`${process.env.GRAVITE_API_URL}`, {
+            api_credentials: {
+                app_user: process.env.GRAVITE_API_USER,
+                app_key: process.env.GRAVITE_API_KEY,
+                app_token: apiToken
+            },
+            product_codes: skuList
+        });
+        return response.data; // Assuming API returns JSON data
+    } catch (error) {
+        console.error('Failed to fetch stock levels:', error);
+        throw error; // or handle the error as needed
+    }
+}
+
+async function updateShopifyProductStock(element) {
+    const url = `${process.env.STORE_API_URL}/inventory_levels/set.json`;
+    const headers = {
+        'X-Shopify-Access-Token': process.env.STORE_API_PASSWORD
+    };
+    const payload = {
+        location_id: element.locationId,
+        inventory_item_id: element.inventory_item_id,
+        available: element.available
+    };
+
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    // Initial delay before the request
+    await delay(0);
+
+    try {
+        const response = await axios.post(url, payload, { headers });
+        // Check the API call limit status and adjust the delay accordingly
+        const apiCallLimit = response.headers['x-shopify-shop-api-call-limit'];
+        const [usedCalls, maxCalls] = apiCallLimit.split('/').map(Number);
+        if (maxCalls - usedCalls < 5) { // If close to limit, increase delay
+            await delay(1000);
+        }
+        if (response.status === 200) {
+            return response.data;
+        }
+    } catch (error) {
+        if (error.response && error.response.status === 429) {
+            // If hit with a rate limit error, increase delay significantly
+            await delay(2000);
+            return updateShopifyProductStock(element); // Retry the request
+        }
+        console.error('Error updating product stock:', error);
+        throw error;
+    }
+}
+
+const getCurrentDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const date = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${date} ${hours}:${minutes}:${seconds}`;
 };
 
 module.exports = {
@@ -958,5 +1073,5 @@ module.exports = {
     updateCategory,
     deleteSubCategory,
     removeAllDuplicates,
-    updateInventoryInDB
+    updateInventory
 }; 
