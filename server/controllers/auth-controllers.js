@@ -1,6 +1,6 @@
 require('dotenv').config();
 const bcrypt = require("bcryptjs");
-const { User, Product, CsvData, filterData, inventoryHistory } = require('../models/user-models')
+const { User, Product, CsvData, filterData, inventoryData } = require('../models/user-models')
 const axios = require('axios');
 const async = require('async');
 
@@ -778,15 +778,9 @@ const removeAllDuplicates = async (req, res) => {
     }
 };
 
-const updateInventoryInStore = async (req, res) => {
-    req.setTimeout(0);
-    try {
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-        res.flushHeaders(); 
+const updateInventoryInDB = async (req, res) => {
 
-        // Get API Token from Gravite
+    try {
         const tokenResponse = await axios.post(`${process.env.GRAVITE_API_URL}`, {
             api_credentials: {
                 app_user: process.env.GRAVITE_API_USER,
@@ -801,12 +795,16 @@ const updateInventoryInStore = async (req, res) => {
             throw new Error("Error retrieving token: " + tokenResponse.data.error);
         }
         const apiToken = tokenResponse.data.token;
+        console.log('-----------')
+        console.log('Third Party Api Token - ', apiToken)
 
         // Get Location Id from Store
         const locationResponse = await axios.get(`${process.env.STORE_API_URL}/locations.json`, {
             headers: { 'X-Shopify-Access-Token': process.env.STORE_API_PASSWORD }
         });
         const locationId = locationResponse.data.locations[0].id;
+        console.log('-----------')
+        console.log('Store Location ID - ', apiToken)
 
         // Fetch SKUs and inventory item of store product variants from db
         const products = await Product.find({
@@ -820,36 +818,37 @@ const updateInventoryInStore = async (req, res) => {
             sku: variant.sku,
             inventory_item_id: variant.inventory_item_id
         }) : ''));
+        console.log('-----------')
+        console.log('Total products - ', allSkuArr.length)
 
-        let count = 0;
-        let updatedResults = 0;
-        let timeStart = getCurrentDateTime();
-        let failedSku = []
+        async function processBatches(allSkus, apiToken) {
 
-        async function processBatches(allSkus, apiToken, res) {
-
-            let results = [];
-            const batches = chunkArray(allSkus, 250);
-            const initialData = {
-                totalSku: allSkuArr.length,
-                processStartTime: timeStart,
-                updatedSku: "0",
-                failedSku: [],
+            let result = {
+                batchCount:0,
+                failedSku:[],
+                updatedSku:0
             }
-            // initially send notification process start
-            res.write(`data: ${JSON.stringify({ message: `process start`, result: initialData })}\n\n`);
+
+            const batches = chunkArray(allSkus, 250);
 
             for (const batch of batches) {
-                count++;
-                console.log('batch - ', count)
+                result.batchCount++;
+
+                console.log('-----------')
+                console.log(`batch - ${result.batchCount}`)
+
                 const skuList = batch.map(element => ({ code: element.sku }));
-                
-                const result = await sendBatchRequest(skuList, apiToken);
-                if (result.connection !== 'OK') {
-                    throw new Error("Error fetching stock levels: " + result.data.error);
+
+                console.log('-----------')
+                console.log('Sku To Third Party App - ', skuList.length)
+
+                const resultFromThirdParty = await sendBatchRequest(skuList, apiToken);
+                if (resultFromThirdParty.connection !== 'OK') {
+                    throw new Error("Error fetching stock levels: " + resultFromThirdParty.data.error);
                 }
 
-                const updatedInventory = Object.entries(result.product_stock);
+                const updatedInventory = Object.entries(resultFromThirdParty.product_stock);
+
                 // creating new objects to set the updated inventory in store
                 let inventoryObject = batch.map((element) => {
                     let c = updatedInventory.find(ele => ele[0] == element.sku)
@@ -857,31 +856,45 @@ const updateInventoryInStore = async (req, res) => {
                         let obj = {
                             sku: element.sku,
                             inventory_item_id: element.inventory_item_id,
-                            available: parseInt(c[1].freestock).toString()
+                            available: parseInt(c[1].freestock),
+                            locationId: locationId
                         }
                         return obj;
                     } else {
-                        failedSku.push(element.sku)
+                        result.failedSku.push(element.sku)
                     }
                 })
 
                 inventoryObject = inventoryObject.filter(element => element != undefined)
-                console.log('inventory to store', inventoryObject.length)
 
-                const batchData = await Promise.allSettled(inventoryObject.map(element => element && updateShopifyProductStock(element, locationId)));
-                console.log('store updates',batchData.length)
-                const BatchResults = {
-                    updatedSku: updatedResults += batchData.length,
-                    failedSku: failedSku,
-                    totalSku: allSkuArr.length,
-                    processStartTime: timeStart
-                }
+                inventoryObject.forEach(async(element)=>{
 
-                results.push(batchData);
-                res.write(`data: ${JSON.stringify({ message: `Batch processed - ${count}`, result: BatchResults })}\n\n`);
+                    await inventoryData.findOneAndUpdate(
+                        {inventory_item_id:element.inventory_item_id},
+                        element,
+                        {upsert:true,new:true}
+                    )
+
+                })
+
+                result.updatedSku += inventoryObject.length;
+                console.log('-----------')
+                console.log('Inventory Data Saved To DB - ', inventoryObject.length)
+
+                console.log('-----------')
+                console.log('Failed Sku - ', result.failedSku.length)
+
             }
-            return results;
+
+            return result;
+
         }
+
+        let result = await processBatches(allSkuArr, apiToken);
+
+        console.log('-----------------------------')
+        console.log(result)
+        console.log(result.failedSku.length)
 
         function chunkArray(array, chunkSize) {
             const chunks = [];
@@ -909,86 +922,11 @@ const updateInventoryInStore = async (req, res) => {
             }
         }
 
-        await processBatches(allSkuArr, apiToken, res);
-
-        const finalResults = {
-            totalSku: allSkuArr.length,
-            updatedSku: updatedResults,
-            processStartTime: timeStart,
-            processEndTime: getCurrentDateTime(),
-            failedSku: failedSku
-        }
-
-        const newInventoryHistory = new inventoryHistory(finalResults);
-        newInventoryHistory.save()
-
-        res.write(`data: ${JSON.stringify({ message: `All batches processed successfully`, result: finalResults })}\n\n`);
-        res.end();
-
     } catch (error) {
-        res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
-        res.end();
+        console.log(error)
     }
+
 };
-
-async function updateShopifyProductStock(element, locationId) {
-    const url = `${process.env.STORE_API_URL}/inventory_levels/set.json`;
-    const headers = {
-        'X-Shopify-Access-Token': process.env.STORE_API_PASSWORD
-    };
-    const payload = {
-        location_id: locationId,
-        inventory_item_id: element.inventory_item_id,
-        available: element.available
-    };
-
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-    // Initial delay before the request
-    await delay(100);
-
-    try {
-        const response = await axios.post(url, payload, { headers });
-        // Check the API call limit status and adjust the delay accordingly
-        const apiCallLimit = response.headers['x-shopify-shop-api-call-limit'];
-        const [usedCalls, maxCalls] = apiCallLimit.split('/').map(Number);
-        if (maxCalls - usedCalls < 10) { // If close to limit, increase delay
-            await delay(1000);
-        }
-        if (response.status === 200) {
-            return response.data;
-        }
-    } catch (error) {
-        if (error.response && error.response.status === 429) {
-            // If hit with a rate limit error, increase delay significantly
-            await delay(2000);
-            return updateShopifyProductStock(element, locationId); // Retry the request
-        }
-        console.error('Error updating product stock:', error);
-        console.log(payload)
-        throw error;
-    }
-}
-
-const getCurrentDateTime = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-    const date = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${date} ${hours}:${minutes}:${seconds}`;
-};
-
-const getInventoryHistory = async (req, res) => {
-    try {
-        const response = await inventoryHistory.find();
-        res.status(200).send(response)
-    } catch (error) {
-        res.status(500).send('error in getting inventory history', error)
-    }
-}
 
 module.exports = {
     validateUser,
@@ -1020,6 +958,5 @@ module.exports = {
     updateCategory,
     deleteSubCategory,
     removeAllDuplicates,
-    updateInventoryInStore,
-    getInventoryHistory
+    updateInventoryInDB
 }; 

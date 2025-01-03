@@ -142,21 +142,18 @@ const filterDataSchema = new mongoose.Schema({
     }
 });
 
-const inventoryHistorySchema = new mongoose.Schema({
-    processStartTime: {
-        type: String
+const inventoryDataSchema = new mongoose.Schema({
+    sku:{
+        type:String
     },
-    processEndTime: {
-        type: String
+    inventory_item_id:{
+        type:String
     },
-    totalSku: {
-        type: String
+    available:{
+        type:Number
     },
-    updatedSku: {
-        type: String
-    },
-    failedSku: {
-        type : Array
+    locationId:{
+        type:Number
     }
 })
 
@@ -183,6 +180,6 @@ const User = mongoose.model('User', userSchema);
 const Product = mongoose.model('Shopify Product', productSchema);
 const CsvData = mongoose.model('Csv Option', csvDataSchema);
 const filterData = mongoose.model('Filter Category', filterDataSchema);
-const inventoryHistory = mongoose.model('Inventory History', inventoryHistorySchema)
+const inventoryData = mongoose.model('Inventory Queries', inventoryDataSchema)
 
-module.exports = { User, Product, CsvData, filterData, inventoryHistory };
+module.exports = { User, Product, CsvData, filterData, inventoryData };
