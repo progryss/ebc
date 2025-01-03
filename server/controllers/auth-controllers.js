@@ -813,7 +813,7 @@ const updateInventoryInDB = async (req, res) => {
                 { "variants.sku": { $ne: "" } },
                 { "variants.sku": { $ne: null } }
             ]
-        }).limit(1000)
+        })
 
         const allSkuArr = products.flatMap(product => product.variants.map(variant => variant.sku ? ({
             sku: variant.sku,
@@ -853,7 +853,7 @@ const updateInventoryInStore = async (req, res) => {
 
     try {
         // Fetch SKUs and inventory item of store product variants from db
-        const freshInventoryList = await inventoryData.find().limit(1000);
+        const freshInventoryList = await inventoryData.find()
         const batches = chunkArray(freshInventoryList, 200);
 
         let notificationResult = {
