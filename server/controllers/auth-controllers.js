@@ -1,6 +1,6 @@
 require('dotenv').config();
 const bcrypt = require("bcryptjs");
-const { User, Product, CsvData, filterData, inventoryData } = require('../models/user-models')
+const { User, Product, CsvData, filterData, inventoryData, inventoryUpdateHistory } = require('../models/user-models')
 const axios = require('axios');
 const async = require('async');
 const { sendToAll } = require('../sseManager');
@@ -779,7 +779,31 @@ const removeAllDuplicates = async (req, res) => {
     }
 };
 
-const updateInventoryInDB = async (req, res) => {
+const updateInventory = async (req, res) => {
+    let notificationResult = {
+        totalSku: 0,
+        startTimeDb: new Date(),
+        updatedSkuDb: 0,
+        failedSkuDb: 0,
+        endTimeDb: '',
+        startTimeStore:'',
+        updatedSkuStore: 0,
+        failedSkuStore: 0,
+        endTimeStore: ''
+    }
+    try {
+        updateInventoryInDB(notificationResult).then(result => {
+            updateInventoryInStore(notificationResult)
+        }).catch(err => {
+            console.log(err)
+        });
+        res.status(202).send("process started")
+    } catch (error) {
+        res.status(500).send(error)
+    }
+}
+
+const updateInventoryInDB = async (notificationResult) => {
 
     try {
         const tokenResponse = await axios.post(`${process.env.GRAVITE_API_URL}`, {
@@ -822,78 +846,71 @@ const updateInventoryInDB = async (req, res) => {
         console.log('-----------')
         console.log('Total products - ', allSkuArr.length)
 
-        let notificationResult = {
-            startTime: getCurrentDateTime(),
-            totalSku: allSkuArr.length,
-            updatedSkuDb: 0,
-            failedSkuDb: 0,
-            endTime: '',
-        }
         // Notify clients that the batch process has started
+        notificationResult.totalSku = allSkuArr.length;
         sendToAll({ message: "Batch process started", result: notificationResult });
 
         let result = await processBatches(allSkuArr, apiToken, locationId, notificationResult);
 
         console.log('-----------------------------')
         console.log(result)
-        console.log(result.failedSku.length)
 
         // Notify clients that all batches are completed
-        notificationResult.endTime = getCurrentDateTime()
+        notificationResult.endTimeDb = new Date();
         sendToAll({ message: "All batches completed", result: notificationResult });
+
+        const existingEntry = await inventoryUpdateHistory.findOne({startTimeDb:notificationResult.startTimeDb})
+        if(!existingEntry){
+            const newHistory = new inventoryUpdateHistory(notificationResult)
+            await newHistory.save()
+            console.log('-----------')
+            console.log('Inventory saved to DB Successfully')
+        }
+
 
     } catch (error) {
         console.error(error);
-        res.status(500).send("Failed to update inventory");
+        res.status(500).send("Failed to update inventory in db");
     }
 
 };
 
-const updateInventoryInStore = async (req, res) => {
+const updateInventoryInStore = async (notificationResult) => {
 
     try {
         // Fetch SKUs and inventory item of store product variants from db
         const freshInventoryList = await inventoryData.find()
         const batches = chunkArray(freshInventoryList, 200);
 
-        let notificationResult = {
-            startTimeStore: getCurrentDateTime(),
-            updatedSku: 0,
-            failedSku: 0,
-            endTimeStore: ''
-        }
-
+        notificationResult.startTimeStore = new Date();
         sendToAll({ message: "Shopify Batch process started", result: notificationResult });
 
         let count = 0;
+        let results = []
         for (const batch of batches) {
             count++;
             const batchData = await Promise.allSettled(batch.map(element => element && updateShopifyProductStock(element)));
             results.push(batchData)
-            notificationResult.updatedSku += batchData.length
+            notificationResult.updatedSkuStore += batchData.length;
+            console.log(`Store Batch ${count} Updated with ${notificationResult.updatedSkuStore} skus`)
             sendToAll({ message: `Shopify Batch processed ${count}`, result: notificationResult });
         }
 
-        notificationResult.endTimeStore = getCurrentDateTime()
+        notificationResult.endTimeStore = new Date()
         sendToAll({ message: "All Shopify Batch processed", result: notificationResult });
+
+        await inventoryUpdateHistory.findOneAndUpdate(
+            {startTimeDb:notificationResult.startTimeDb},
+            notificationResult
+        )
+
+        console.log('-----------')
+        console.log('store process successfully complete')
 
     } catch (error) {
         console.log('error in updating shopify inventory', error)
     }
 };
-
-const updateInventory = async (req, res) => {
-    try {
-        updateInventoryInDB().then(result => {
-            updateInventoryInStore()
-        }).catch(err => {
-            console.log(err)
-        });
-        res.status(202).send("process started")
-    } catch (error) {
-        res.status(500).send(error)
-    }
-}
 
 async function processBatches(allSkus, apiToken, locationId, notificationResult) {
 
@@ -906,6 +923,7 @@ async function processBatches(allSkus, apiToken, locationId, notificationResult)
     const batches = chunkArray(allSkus, 200);
 
     for (const batch of batches) {
+
         result.batchCount++;
 
         console.log('-----------')
@@ -958,6 +976,7 @@ async function processBatches(allSkus, apiToken, locationId, notificationResult)
 
         console.log('-----------')
         console.log('Failed Sku - ', result.failedSku.length)
+
         notificationResult.updatedSkuDb += inventoryObject.length;
         notificationResult.failedSkuDb = result.failedSku.length;
         sendToAll({ message: `Batch processed ${result.batchCount}`, result: notificationResult });

@@ -7,13 +7,13 @@ const serverUrl = process.env.REACT_APP_SERVER_URL;
 function InventoryStore() {
   const [notification, setNotification] = useState({
     totalSku: 0,
-    startTime: '',
+    startTimeDb: '',
     updatedSkuDb: 0,
     failedSkuDb: 0,
-    endTime: '',
+    endTimeDb: '',
     startTimeStore: '',
-    updatedSku: 0,
-    failedSku: 0,
+    updatedSkuStore: 0,
+    failedSkuStore: 0,
     endTimeStore: ''
   });  // State to hold messages from the server
 
@@ -22,8 +22,6 @@ function InventoryStore() {
     const eventSource = new EventSource(`${serverUrl}/api/events`);
 
     eventSource.onmessage = function (event) {
-      // Handle incoming messages
-      // console.log('Received message:', event.data);
       const newData = JSON.parse(event.data);
       setNotification(prev => ({ ...prev, ...newData.result }));
     };
@@ -40,16 +38,21 @@ function InventoryStore() {
     };
   }, []);
 
+  useEffect(() => {
+    // Save the updated notification state to localStorage
+    localStorage.setItem('notification', JSON.stringify(notification));
+  }, [notification]);
+
   const saveFreshInventory = async () => {
     setNotification({
       totalSku: 0,
-      startTime: '',
+      startTimeDb: '',
       updatedSkuDb: 0,
       failedSkuDb: 0,
-      endTime: '',
+      endTimeDb: '',
       startTimeStore: '',
-      updatedSku: 0,
-      failedSku: 0,
+      updatedSkuStore: 0,
+      failedSkuStore: 0,
       endTimeStore: ''
     })
     try {
@@ -68,18 +71,18 @@ function InventoryStore() {
       <div>
         <div style={{ border: '1px solid red' }}>
           <h3>Inventory to DB</h3>
-          <p>{`Start Time - ${notification.startTime}`}</p>
+          <p>{`Start Time - ${notification.startTimeDb !== '' ? new Date(notification.startTimeDb) : ''}`}</p>
           <p>{`Total Products - ${notification.totalSku}`}</p>
           <p>{`Updated Sku DB - ${notification.updatedSkuDb}`}</p>
           <p>{`Failed Sku DB - ${notification.failedSkuDb}`}</p>
-          <p>{`End Time - ${notification.endTime}`}</p>
+          <p>{`End Time - ${notification.endTimeDb !== '' ? new Date(notification.endTimeDb) : ''}`}</p>
         </div>
         <div style={{ border: '1px solid red' }}>
           <h3>DB to Shopify</h3>
-          <p>{`Start Time - ${notification.startTimeStore}`}</p>
-          <p>{`Updated Sku DB - ${notification.updatedSku}`}</p>
-          <p>{`Failed Sku DB - ${notification.failedSku}`}</p>
-          <p>{`End Time - ${notification.endTimeStore}`}</p>
+          <p>{`Start Time - ${notification.startTimeStore !== '' ? new Date(notification.startTimeStore) : ''}`}</p>
+          <p>{`Updated Sku DB - ${notification.updatedSkuStore}`}</p>
+          <p>{`Failed Sku DB - ${notification.failedSkuStore}`}</p>
+          <p>{`End Time - ${notification.endTimeStore !== '' ? new Date(notification.endTimeStore) : ''}`}</p>
         </div>
       </div>
     </div>
