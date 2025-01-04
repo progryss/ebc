@@ -157,6 +157,36 @@ const inventoryDataSchema = new mongoose.Schema({
     }
 })
 
+const inventoryUpdateHistorySchema = new mongoose.Schema({
+    totalSku:{
+        type:Number
+    },
+    startTimeDb:{
+        type:Date
+    },
+    updatedSkuDb:{
+        type:Number
+    },
+    failedSkuDb:{
+        type:Number
+    },
+    endTimeDb:{
+        type:Date
+    },
+    startTimeStore:{
+        type:Date
+    },
+    updatedSkuStore:{
+        type:Number
+    },
+    failedSkuStore:{
+        type:Number
+    },
+    endTimeStore:{
+        type:Date
+    }
+})
+
 userSchema.pre("save", async function (next) {
     if (this.isModified("password")) {
         this.password = await bcrypt.hash(this.password, 12);
@@ -180,6 +210,7 @@ const User = mongoose.model('User', userSchema);
 const Product = mongoose.model('Shopify Product', productSchema);
 const CsvData = mongoose.model('Csv Option', csvDataSchema);
 const filterData = mongoose.model('Filter Category', filterDataSchema);
-const inventoryData = mongoose.model('Inventory Queries', inventoryDataSchema)
+const inventoryData = mongoose.model('Inventory Queries', inventoryDataSchema);
+const inventoryUpdateHistory = mongoose.model('Inventory History',inventoryUpdateHistorySchema);
 
-module.exports = { User, Product, CsvData, filterData, inventoryData };
+module.exports = { User, Product, CsvData, filterData, inventoryData, inventoryUpdateHistory };
