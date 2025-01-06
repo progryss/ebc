@@ -784,9 +784,9 @@ const updateInventory = async (req, res) => {
         totalSku: 0,
         startTimeDb: new Date(),
         updatedSkuDb: 0,
-        failedSkuDb: 0,
+        failedSkuDb: [],
         endTimeDb: '',
-        startTimeStore:'',
+        startTimeStore: '',
         updatedSkuStore: 0,
         failedSkuStore: 0,
         endTimeStore: ''
@@ -804,6 +804,9 @@ const updateInventory = async (req, res) => {
 }
 
 const updateInventoryInDB = async (notificationResult) => {
+
+    // first of all delete the previous data
+    await inventoryData.deleteMany({});
 
     try {
         const tokenResponse = await axios.post(`${process.env.GRAVITE_API_URL}`, {
@@ -852,15 +855,12 @@ const updateInventoryInDB = async (notificationResult) => {
 
         let result = await processBatches(allSkuArr, apiToken, locationId, notificationResult);
 
-        console.log('-----------------------------')
-        console.log(result)
-
         // Notify clients that all batches are completed
         notificationResult.endTimeDb = new Date();
         sendToAll({ message: "All batches completed", result: notificationResult });
 
-        const existingEntry = await inventoryUpdateHistory.findOne({startTimeDb:notificationResult.startTimeDb})
-        if(!existingEntry){
+        const existingEntry = await inventoryUpdateHistory.findOne({ startTimeDb: notificationResult.startTimeDb })
+        if (!existingEntry) {
             const newHistory = new inventoryUpdateHistory(notificationResult)
             await newHistory.save()
             console.log('-----------')
@@ -869,8 +869,7 @@ const updateInventoryInDB = async (notificationResult) => {
 
 
     } catch (error) {
-        console.error(error);
-        res.status(500).send("Failed to update inventory in db");
+        console.error("Failed to update inventory in db", error);
     }
 
 };
@@ -900,7 +899,7 @@ const updateInventoryInStore = async (notificationResult) => {
         sendToAll({ message: "All Shopify Batch processed", result: notificationResult });
 
         await inventoryUpdateHistory.findOneAndUpdate(
-            {startTimeDb:notificationResult.startTimeDb},
+            { startTimeDb: notificationResult.startTimeDb },
             notificationResult
         )
 
@@ -957,16 +956,14 @@ async function processBatches(allSkus, apiToken, locationId, notificationResult)
                 return obj;
             } else {
                 result.failedSku.push(element.sku)
+                return undefined;
             }
         }).filter(element => element != undefined)
 
         inventoryObject.forEach(async (element) => {
 
-            await inventoryData.findOneAndUpdate(
-                { inventory_item_id: element.inventory_item_id },
-                element,
-                { upsert: true, new: true }
-            )
+            const newObj = new inventoryData(element);
+            await newObj.save();
 
         })
 
@@ -978,7 +975,7 @@ async function processBatches(allSkus, apiToken, locationId, notificationResult)
         console.log('Failed Sku - ', result.failedSku.length)
 
         notificationResult.updatedSkuDb += inventoryObject.length;
-        notificationResult.failedSkuDb = result.failedSku.length;
+        notificationResult.failedSkuDb = result.failedSku;
         sendToAll({ message: `Batch processed ${result.batchCount}`, result: notificationResult });
 
     }
@@ -1051,16 +1048,16 @@ async function updateShopifyProductStock(element) {
     }
 }
 
-const getCurrentDateTime = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-    const date = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${date} ${hours}:${minutes}:${seconds}`;
-};
+const getInventoryHistory = async(req,res)=>{
+    try {
+        const response = await inventoryUpdateHistory.find({endTimeStore:{$ne:null}})
+        .sort({ endTimeStore: -1 })
+        .limit(10);
+        res.status(200).send(response)
+    } catch (error) {
+        res.status(500).send('error in getting inventory history')
+    }
+}
 
 module.exports = {
     validateUser,
@@ -1092,5 +1089,6 @@ module.exports = {
     updateCategory,
     deleteSubCategory,
     removeAllDuplicates,
-    updateInventory
+    updateInventory,
+    getInventoryHistory
 }; 
