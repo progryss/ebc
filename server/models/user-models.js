@@ -168,7 +168,7 @@ const inventoryUpdateHistorySchema = new mongoose.Schema({
         type:Number
     },
     failedSkuDb:{
-        type:Number
+        type:Array
     },
     endTimeDb:{
         type:Date
