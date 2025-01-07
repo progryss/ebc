@@ -5,8 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const Controler = require('../controllers/auth-controllers');
 const authenticate = require('../middlewares/authenticate');
-
-const { addClient, removeClient } = require('../sseManager');
+const { invEventController } = require('../services/inventoryEvent');
 
 // Ensure upload directories exist
 const ensureDirectoryExistence = (dirPath) => {
@@ -114,21 +113,6 @@ router.delete('/remove-duplicateCsv', Controler.removeAllDuplicates);
 router.get('/fresh-inventory', Controler.updateInventory);
 router.get('/get-inventory-history',Controler.getInventoryHistory);
 
-router.get('/events', (req, res) => {
-    const clientId = Date.now();
-    const headers = {
-        'Content-Type': 'text/event-stream',
-        'Connection': 'keep-alive',
-        'Cache-Control': 'no-cache'
-    };
-    res.writeHead(200, headers);
-
-    addClient(clientId, res); // Add client to the manager
-
-    req.on('close', () => {
-        removeClient(clientId); // Remove client when they disconnect
-        res.end();
-    });
-});
+router.get('/inventory-events', invEventController);
 
 module.exports = router; 

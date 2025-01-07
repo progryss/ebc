@@ -35,7 +35,7 @@ function InventoryStore() {
   
   useEffect(() => {
     // Establish the connection when the component mounts
-    const eventSource = new EventSource(`${serverUrl}/api/events`);
+    const eventSource = new EventSource(`${serverUrl}/api/inventory-events`);
 
     eventSource.onmessage = function (event) {
       const newData = JSON.parse(event.data);
