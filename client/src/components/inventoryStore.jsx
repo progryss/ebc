@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@mui/material';
 import axios from 'axios';
 import Loader from './loader'
@@ -7,8 +7,7 @@ const serverUrl = process.env.REACT_APP_SERVER_URL;
 
 function InventoryStore() {
 
-  const [inventoryHistory, setInventoryHistory] = useState([]);
-  const [notification, setNotification] = useState({
+  const initialState = {
     totalSku: 0,
     startTimeDb: '',
     updatedSkuDb: 0,
@@ -18,7 +17,12 @@ function InventoryStore() {
     updatedSkuStore: 0,
     failedSkuStore: 0,
     endTimeStore: ''
-  });  // State to hold messages from the server
+  }
+
+  const currentState = JSON.parse(localStorage.getItem('notificationState'));
+
+  const [inventoryHistory, setInventoryHistory] = useState([]);
+  const [notification, setNotification] = useState(currentState !== null && currentState !== undefined ? currentState : initialState);
 
   const getInventoryHistory = async () => {
     try {
@@ -27,9 +31,8 @@ function InventoryStore() {
     } catch (error) {
       console.log(error)
     }
-    console.log('hi')
   }
-
+  
   useEffect(() => {
     // Establish the connection when the component mounts
     const eventSource = new EventSource(`${serverUrl}/api/events`);
@@ -37,10 +40,13 @@ function InventoryStore() {
     eventSource.onmessage = function (event) {
       const newData = JSON.parse(event.data);
       setNotification(prev => ({ ...prev, ...newData.result }));
+      localStorage.setItem('notificationState', JSON.stringify(newData.result));
       if (newData.message === 'All Shopify Batch processed') {
-        setTimeout(()=>{
+        setTimeout(() => {
           getInventoryHistory()
         })
+        setNotification(initialState)
+        localStorage.setItem('notificationState', JSON.stringify(initialState));
       }
     };
 
@@ -57,8 +63,7 @@ function InventoryStore() {
   }, []);
 
   useEffect(() => {
-    // Save the updated notification state to localStorage
-    // localStorage.setItem('notification', JSON.stringify(notification));
+
   }, [notification]);
 
   useEffect(() => {
@@ -66,17 +71,6 @@ function InventoryStore() {
   }, [])
 
   const saveFreshInventory = async () => {
-    setNotification({
-      totalSku: 0,
-      startTimeDb: '',
-      updatedSkuDb: 0,
-      failedSkuDb: [],
-      endTimeDb: '',
-      startTimeStore: '',
-      updatedSkuStore: 0,
-      failedSkuStore: 0,
-      endTimeStore: ''
-    })
     try {
       const response = await axios.get(`${serverUrl}/api/fresh-inventory`);
       console.log(response);
@@ -130,11 +124,9 @@ function InventoryStore() {
     document.body.removeChild(link);
   }
 
-
-
   return (
     <div style={{ padding: '15px 10px', maxWidth: '1200px', margin: 'auto' }}>
-      <Button onClick={saveFreshInventory} variant='contained' sx={{ marginBottom: '10px' }}>
+      <Button onClick={saveFreshInventory} variant='contained' sx={{ marginBottom: '10px' }} disabled={notification?.startTimeDb !== '' ?true:false}>
         Update Inventory
       </Button>
       {

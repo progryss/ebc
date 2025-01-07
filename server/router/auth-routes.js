@@ -111,8 +111,8 @@ router.put('/update-category', uploadImage.single('labelImage'), Controler.updat
 router.delete('/delete-subCategory', Controler.deleteSubCategory);
 router.delete('/remove-duplicateCsv', Controler.removeAllDuplicates);
 
-router.get('/fresh-inventory', Controler.updateInventory)
-router.get('/get-inventory-history',Controler.getInventoryHistory)
+router.get('/fresh-inventory', Controler.updateInventory);
+router.get('/get-inventory-history',Controler.getInventoryHistory);
 
 router.get('/events', (req, res) => {
     const clientId = Date.now();
