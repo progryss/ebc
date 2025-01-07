@@ -56,7 +56,7 @@ const updateInventoryInDB = async (notificationResult) => {
                 { "variants.sku": { $ne: "" } },
                 { "variants.sku": { $ne: null } }
             ]
-        }).limit(50)
+        })
 
         const allSkuArr = products.flatMap(product => product.variants.map(variant => variant.sku ? ({
             sku: variant.sku,
@@ -95,7 +95,7 @@ const updateInventoryInStore = async (notificationResult) => {
     try {
         // Fetch SKUs and inventory item of store product variants from db
         const freshInventoryList = await inventoryData.find()
-        const batches = chunkArray(freshInventoryList, 20);
+        const batches = chunkArray(freshInventoryList, 200);
 
         notificationResult.startTimeStore = new Date();
         sendToAll({ message: "Shopify Batch process started", result: notificationResult });
@@ -141,7 +141,7 @@ async function processBatches(allSkus, apiToken, locationId, notificationResult)
         updatedSku: 0
     }
 
-    const batches = chunkArray(allSkus, 20);
+    const batches = chunkArray(allSkus, 200);
 
     for (const batch of batches) {
 
