@@ -780,6 +780,15 @@ const removeAllDuplicates = async (req, res) => {
 };
 
 const updateInventory = async (req, res) => {
+    try {
+        performUpdateInventory()
+        res.status(202).send("process started")
+    } catch (error) {
+        res.status(500).send(error)
+    }
+}
+
+const performUpdateInventory = async () => {
     let notificationResult = {
         totalSku: 0,
         startTimeDb: new Date(),
@@ -791,22 +800,14 @@ const updateInventory = async (req, res) => {
         failedSkuStore: 0,
         endTimeStore: ''
     }
-    try {
-        updateInventoryInDB(notificationResult).then(result => {
-            updateInventoryInStore(notificationResult)
-        }).catch(err => {
-            console.log(err)
-        });
-        res.status(202).send("process started")
-    } catch (error) {
-        res.status(500).send(error)
-    }
+    updateInventoryInDB(notificationResult).then(result => {
+        updateInventoryInStore(notificationResult)
+    }).catch(err => {
+        console.log(err)
+    });
 }
 
 const updateInventoryInDB = async (notificationResult) => {
-
-    // first of all delete the previous data
-    await inventoryData.deleteMany({});
 
     try {
         const tokenResponse = await axios.post(`${process.env.GRAVITE_API_URL}`, {
@@ -840,7 +841,7 @@ const updateInventoryInDB = async (notificationResult) => {
                 { "variants.sku": { $ne: "" } },
                 { "variants.sku": { $ne: null } }
             ]
-        })
+        }).limit(50)
 
         const allSkuArr = products.flatMap(product => product.variants.map(variant => variant.sku ? ({
             sku: variant.sku,
@@ -879,7 +880,7 @@ const updateInventoryInStore = async (notificationResult) => {
     try {
         // Fetch SKUs and inventory item of store product variants from db
         const freshInventoryList = await inventoryData.find()
-        const batches = chunkArray(freshInventoryList, 200);
+        const batches = chunkArray(freshInventoryList, 20);
 
         notificationResult.startTimeStore = new Date();
         sendToAll({ message: "Shopify Batch process started", result: notificationResult });
@@ -906,6 +907,12 @@ const updateInventoryInStore = async (notificationResult) => {
         console.log('-----------')
         console.log('store process successfully complete')
 
+        // Now all delete the previous data
+        await inventoryData.deleteMany({});
+
+        console.log('-----------')
+        console.log('all inventory queries successfully deleted from DB')
+
     } catch (error) {
         console.log('error in updating shopify inventory', error)
     }
@@ -919,7 +926,7 @@ async function processBatches(allSkus, apiToken, locationId, notificationResult)
         updatedSku: 0
     }
 
-    const batches = chunkArray(allSkus, 200);
+    const batches = chunkArray(allSkus, 20);
 
     for (const batch of batches) {
 
@@ -1048,11 +1055,11 @@ async function updateShopifyProductStock(element) {
     }
 }
 
-const getInventoryHistory = async(req,res)=>{
+const getInventoryHistory = async (req, res) => {
     try {
-        const response = await inventoryUpdateHistory.find({endTimeStore:{$ne:null}})
-        .sort({ endTimeStore: -1 })
-        .limit(10);
+        const response = await inventoryUpdateHistory.find({ endTimeStore: { $ne: null } })
+            .sort({ endTimeStore: -1 })
+            .limit(10);
         res.status(200).send(response)
     } catch (error) {
         res.status(500).send('error in getting inventory history')
@@ -1090,5 +1097,6 @@ module.exports = {
     deleteSubCategory,
     removeAllDuplicates,
     updateInventory,
-    getInventoryHistory
+    getInventoryHistory,
+    performUpdateInventory
 }; 
