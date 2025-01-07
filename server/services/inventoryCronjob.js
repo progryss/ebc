@@ -1,6 +1,7 @@
-require('dotenv').config({ path: '../../.env' });
+require('dotenv').config({ path: '/var/www/potnvehiclefinder.co.uk/html/.env' });
 const {performUpdateInventory} = require('./inventryUpdate.js')
 const mongoose = require('mongoose');
+
 
 mongoose.connect(process.env.DB_URI)
   .then(() => {
