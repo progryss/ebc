@@ -242,7 +242,7 @@ async function processCsvFile(filePath) {
                 const transformed = {
                     make: data.Make.trim().toLowerCase(),
                     model: data.SubModel ? `${data.Model.trim()} ${data.SubModel.trim()}`.toLowerCase() : data.Model.trim().toLowerCase(),
-                    engineType: `${data.Engine.trim()} ${data.EngineType.trim()} ${data.FuelType.trim()}`.toLowerCase(),
+                    engineType: `${data.Engine.trim()} ${data.EngineType.trim()} ${data.FuelType.trim()} ${data['BHP'] ? `(${data['BHP'].trim()})` : ''}`.toLowerCase(),
                     year: data.YearNo.trim(),
                     bhp: data['BHP'] ? data['BHP'].trim() : '',
                     frontBrakeCaliperMake: data.FrontBrakeCaliperMake ? data.FrontBrakeCaliperMake.trim() : '',
