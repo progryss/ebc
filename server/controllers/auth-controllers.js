@@ -239,10 +239,11 @@ async function processCsvFile(filePath) {
                 let capitalizedMake = data.Make.trim().toLowerCase().replace(/\b\w/g, function (char) {
                     return char.toUpperCase();
                 });
+                let combineEngineType = `${data.Engine? data.Engine.trim() : ''}${data.EngineType? ` ${data.EngineType.trim()}` : ''}${data.FuelType ? ` ${data.FuelType.trim()}` : ''}${data['BHP'] ? ` (${data['BHP'].trim()})` : ''}`;
                 const transformed = {
                     make: data.Make.trim().toLowerCase(),
                     model: data.SubModel ? `${data.Model.trim()} ${data.SubModel.trim()}`.toLowerCase() : data.Model.trim().toLowerCase(),
-                    engineType: `${data.Engine.trim()} ${data.EngineType.trim()} ${data.FuelType.trim()} ${data['BHP'] ? `(${data['BHP'].trim()})` : ''}`.toLowerCase(),
+                    engineType: combineEngineType.toLowerCase().trim(),
                     year: data.YearNo.trim(),
                     bhp: data['BHP'] ? data['BHP'].trim() : '',
                     frontBrakeCaliperMake: data.FrontBrakeCaliperMake ? data.FrontBrakeCaliperMake.trim() : '',

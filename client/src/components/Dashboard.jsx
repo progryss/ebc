@@ -481,7 +481,7 @@ export default function Dashboard() {
                 </div>
               </Modal>
               <Button variant="contained" onClick={deleteRowFromTable} className="mb-3 me-2"><i className="fa fa-trash me-1"></i> Delete Rows</Button>
-              <Button variant="contained" onClick={deleteDuplicateCsv} className="mb-3"><i className="fa fa-trash me-1"></i> Delete Duplicate Entries</Button>
+              <Button variant="contained" onClick={deleteDuplicateCsv} className="mb-3"><i className="fa fa-trash me-1"></i> Delete Duplicate Rows</Button>
             </div>
 
             <div className="table-responsive customerTable">
