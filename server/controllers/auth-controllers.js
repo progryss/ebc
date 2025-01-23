@@ -403,44 +403,19 @@ const getCsvDataMakes = async (req, res) => {
     }
 }
 
-const getCsvDataModels = async (req, res) => {
-    try {
-        // Extract the selected make value from the query parameters
-        const selectedMake = req.query.make;
-
-        // Check if the selected make is provided
-        if (!selectedMake) {
-            return res.status(400).json({ error: 'Selected make is required' });
-        }
-
-        // Perform aggregation to get unique models for the selected make
-        const uniqueModels = await CsvData.aggregate([
-            { $match: { make: selectedMake } }, // Filter documents by selected make
-            { $group: { _id: "$model" } }, // Group documents by "model" field
-            { $project: { _id: 0, model: "$_id" } } // Project the "model" field without _id
-        ]);
-
-        res.status(200).send(uniqueModels.map(item => item.model))
-    } catch (error) {
-        console.error('Error fetching unique models:', error);
-        res.status(500).json({ error: 'Failed to fetch unique models' });
-    }
-}
-
 const getCsvDataYears = async (req, res) => {
     try {
-        // Extract the selected model and make values from the query parameters
-        const selectedModel = req.query.model;
+
         const selectedMake = req.query.make;
 
-        // Check if the selected model and make are provided
-        if (!selectedModel || !selectedMake) {
-            return res.status(400).json({ error: 'Selected model and make are required' });
+        // Check if the selected make are provided
+        if ( !selectedMake) {
+            return res.status(400).json({ error: 'Selected make are required' });
         }
 
         // Perform aggregation to get unique years for the selected model
         const years = await CsvData.aggregate([
-            { $match: { model: selectedModel, make: selectedMake } },
+            { $match: { make: selectedMake } },
             { $group: { _id: "$year" } }, // Group documents by "startYear" field
             { $project: { _id: 0, year: "$_id" } } // Project the "startYear" field without _id
         ]);
@@ -452,15 +427,40 @@ const getCsvDataYears = async (req, res) => {
     }
 }
 
-const getCsvDataEngineTypes = async (req, res) => {
+const getCsvDataModels = async (req, res) => {
     try {
-        const selectedModel = req.query.model;
+        // Extract the selected make and year value from the query parameters
         const selectedMake = req.query.make;
         const selectedYear = req.query.year;
 
+        // Check if the selected make is provided
+        if (!selectedMake || !selectedYear) {
+            return res.status(400).json({ error: 'Selected make and year is required' });
+        }
+
+        // Perform aggregation to get unique models for the selected make and year
+        const uniqueModels = await CsvData.aggregate([
+            { $match: { make: selectedMake, year: selectedYear } }, // Filter documents by selected make
+            { $group: { _id: "$model" } }, // Group documents by "model" field
+            { $project: { _id: 0, model: "$_id" } } // Project the "model" field without _id
+        ]);
+
+        res.status(200).send(uniqueModels.map(item => item.model))
+    } catch (error) {
+        console.error('Error fetching unique models:', error);
+        res.status(500).json({ error: 'Failed to fetch unique models' });
+    }
+}
+
+const getCsvDataEngineTypes = async (req, res) => {
+    try {
+        const selectedMake = req.query.make;
+        const selectedYear = req.query.year;
+        const selectedModel = req.query.model;
+
         // Check if the engine is provided
         if (!selectedMake || !selectedModel || !selectedYear) {
-            return res.status(400).json({ error: 'year is required' });
+            return res.status(400).json({ error: 'Selected make , year and model is required' });
         }
 
         // Perform aggregation to get unique engine types for the selected year
