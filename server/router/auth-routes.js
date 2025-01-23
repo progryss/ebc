@@ -107,6 +107,8 @@ router.post('/product-update-notify', Controler.productWebhook)
 router.post('/add-category', Controler.addCategory);
 router.get('/get-category', Controler.getCategories);
 router.put('/update-category', uploadImage.single('labelImage'), Controler.updateCategory);
+router.put('/update-subcategory', uploadImage.single('labelImage'), Controler.updateSubCategory);
+router.put('/update-subcategory-order', Controler.arrangeOrderSubCat);
 router.delete('/delete-subCategory', Controler.deleteSubCategory);
 router.delete('/remove-duplicateCsv', Controler.removeAllDuplicates);
 
@@ -115,4 +117,4 @@ router.get('/get-inventory-history',Controler.getInventoryHistory);
 
 router.get('/inventory-events', invEventController);
 
-module.exports = router; 
+module.exports = router;

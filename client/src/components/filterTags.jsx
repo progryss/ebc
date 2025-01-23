@@ -1,11 +1,55 @@
 import React, { useEffect, useState } from 'react';
-import { Button, TextField, Box } from '@mui/material';
+import { Button, Box } from '@mui/material';
 import axios from 'axios';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import { useDropzone } from 'react-dropzone';
+import Modal from '@mui/material/Modal';
+import SubcategoryDetails from './subcategoryDetails';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditIcon from '@mui/icons-material/Edit';
+
+import PropTypes from 'prop-types';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const serverUrl = process.env.REACT_APP_SERVER_URL;
+
+function TabPanel(props) {
+    const { children, value, index, ...other } = props;
+
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`vertical-tabpanel-${index}`}
+            aria-labelledby={`vertical-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box sx={{ p: 3 }}>
+                    {children}
+                </Box>
+            )}
+        </div>
+    );
+}
+
+TabPanel.propTypes = {
+    children: PropTypes.node,
+    index: PropTypes.number.isRequired,
+    value: PropTypes.number.isRequired,
+};
+
+function a11yProps(index) {
+    return {
+        id: `vertical-tab-${index}`,
+        'aria-controls': `vertical-tabpanel-${index}`,
+    };
+}
 
 function FilterTags() {
 
@@ -18,6 +62,16 @@ function FilterTags() {
     const [labelText, setLabelText] = useState('');
     const [labelImage, setLabelImage] = useState(null);
     const [showImage, setShowImage] = useState(null);
+
+    const [modelOpen, setModelOpen] = React.useState(false);
+    const handleCloseModel = () => setModelOpen(false);
+    const [tagPopopData, setTagPopopData] = useState(null);
+
+    const [value, setValue] = React.useState(0);
+
+    const handleChange = (event, newValue) => {
+        setValue(newValue);
+    };
 
     const addCategory = async () => {
         if (!category.trim()) {
@@ -53,8 +107,7 @@ function FilterTags() {
         formData.append('subCategory', subCategory);
         formData.append('labelBg', color);
         formData.append('labelText', labelText);
-        formData.append('labelImage', labelImage); // Make sure labelImage is the File object
-
+        formData.append('labelImage', labelImage);
         try {
             const response = await axios.put(`${serverUrl}/api/update-category`, formData, {
                 headers: {
@@ -99,7 +152,7 @@ function FilterTags() {
     };
 
     const { getRootProps, getInputProps } = useDropzone({
-        accept: 'image/*',
+        accept: 'image/jpeg, image/png, image/gif',
         onDrop,
     });
 
@@ -122,9 +175,50 @@ function FilterTags() {
         }
     };
 
+    const refreshIt = () => {
+        setR1(!r1)
+    }
+
+    const updateSubCat = (category, subcategory) => {
+        setModelOpen(true);
+        let data = {
+            category: category,
+            subCategory: subcategory.subCategory,
+            labelBg: subcategory.labelBg,
+            labelText: subcategory.labelText,
+            labelImage: subcategory.labelImage
+        }
+        setTagPopopData(data)
+    }
+
+    const onDragEnd = async (result) => {
+        if (!result.destination) return;
+
+        const categoryIndex = filterData.findIndex(c => c.name === result.type);  // Assuming you use the category name as the type
+        if (categoryIndex === -1) return;
+
+        const category = filterData[categoryIndex];
+        const newOptions = Array.from(category.options);
+        const [reorderedItem] = newOptions.splice(result.source.index, 1);
+        newOptions.splice(result.destination.index, 0, reorderedItem);
+        category.options = newOptions
+        const payload = category
+        try {
+            const response = await axios.put(`${serverUrl}/api/update-subcategory-order`, payload, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                withCredentials: true,
+            })
+            console.log(response.data)
+        } catch (error) {
+            console.log(error)
+        }
+    };
+
     return (
         <>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', paddingTop: '20px' }}>
                 <Box className="ps-2">
                     {/* <Box>
                         <p>Add Filter Section -</p>
@@ -157,11 +251,11 @@ function FilterTags() {
                                 id="demo-simple-select"
                                 value={selectValue}
                                 onChange={e => setSelectValue(e.target.value)}
-                                sx={{ marginLeft: '42px' }}
+                                sx={{ marginLeft: '42px', width: '183px' }}
                             >
                                 <MenuItem value='blank' disabled>Select Heading</MenuItem>
                                 {filterData.map((element, index) => (
-                                    <MenuItem key={`${element.name}-${index}`} value={element.name}>{element.name}</MenuItem>
+                                    <MenuItem key={index} value={element.name}>{element.name}</MenuItem>
                                 ))}
                             </Select>
                         </Box>
@@ -174,7 +268,7 @@ function FilterTags() {
                                     onChange={(e) => setSubcategory(e.target.value)}
                                     required
                                     className='labelText'
-                                    style={{ marginLeft: '55px' }}
+                                    style={{ marginLeft: '35px' }}
                                     placeholder='Enter option name'
                                 />
                             </Box>
@@ -185,7 +279,7 @@ function FilterTags() {
                                         type="color"
                                         value={color}
                                         onChange={e => setColor(e.target.value)}
-                                        style={{ width: '100px', marginLeft: '104px' }}
+                                        style={{ width: '183px', marginLeft: '104px' }}
                                     />
                                 </Box>
                                 <Box className="d-flex mt-3" sx={{ alignItems: 'center' }}>
@@ -209,7 +303,8 @@ function FilterTags() {
                                                 height: '50px',
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                padding: '0 20px'
+                                                padding: '0 20px',
+                                                width: '183px'
                                             }}
                                         >
                                             <input {...getInputProps()} />
@@ -217,7 +312,7 @@ function FilterTags() {
                                         </div>
                                         {labelImage && (
                                             <div>
-                                                <img src={showImage} alt="Selected" style={{ height: '50px' }} />
+                                                <img src={showImage} alt="Selected" style={{ height: '50px', width: '100px', marginLeft: '10px', border: '1px solid #e8e8e8' }} />
                                             </div>
                                         )}
                                     </div>
@@ -236,44 +331,103 @@ function FilterTags() {
 
                     </Box>
                 </Box>
-                <Box className="mt-3 ps-2">
-                    <p>Filter List -</p>
-                    <ul style={{ listStyle: 'none', padding: '0', maxWidth: '400px' }}>
-                        {filterData.map((element, index) => (
-                            <li key={`${element.name}-${index}`} style={{ padding: '6px 10px', border: '1px solid silver' }}>
-                                {element.name}
-                                <ul style={{ paddingLeft: '0' }}>
-                                    {element.options.map((option, index) => (
-                                        <li key={`${option.labelText}-${index}`} style={{ padding: '6px 10px', display: 'flex', justifyContent: 'space-between' }}>
-                                            <span>
-                                                <i className='fa fa-trash me-3' style={{ color: '#d52121', fontSize: '15px', cursor: 'pointer' }} onClick={() => deleteSubCat(element.name, option.subCategory)}></i>
-                                                {option.subCategory}
-                                            </span>
-                                            {option.labelImage ? (
-                                                <img src={`${serverUrl}${option.labelImage}`} style={{ height: '25px' }} />
-                                            ) : option.labelText && option.labelImage == null ? (
-                                                <span style={{
-                                                    width: '100px',
-                                                    background: `${option.labelBg}`,
-                                                    fontSize: '12px',
-                                                    fontWeight: '600',
-                                                    display: 'flex',
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center'
-                                                }}>
-                                                    {option.labelText}
-                                                </span>
-                                            ) : (
-                                                <span style={{ width: '100px', background: `${option.labelBg}` }}>{option.labelText}</span>
-                                            )}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </li>
+                <Box
+                    sx={{ flexGrow: 1, bgcolor: 'background.paper', display: 'flex', height: 400 }}
+                >
+                    <Tabs
+                        orientation="vertical"
+                        variant="scrollable"
+                        value={value}
+                        onChange={handleChange}
+                        aria-label="Vertical tabs example"
+                        sx={{ borderRight: 1, borderColor: 'divider' }}
+                    >
+                        {filterData.map((category, index) => (
+                            <Tab key={index} label={category.name} {...a11yProps(index)} style={{ alignItems: 'flex-start' }} />
                         ))}
-                    </ul>
+                    </Tabs>
+                    {filterData.map((category, catIndex) => (
+                        <TabPanel value={value} index={catIndex} key={catIndex}>
+                            <DragDropContext onDragEnd={onDragEnd}>
+                                <Droppable droppableId={`item-${catIndex}`} type={category.name}>
+                                    {(provided, snapshot) => (
+                                        <ul ref={provided.innerRef} {...provided.droppableProps} style={{ padding: '0', minWidth: '450px' }}>
+                                            {category.options.length > 0 ? category.options.map((option, index) => (
+                                                <Draggable key={`item-${index}`} draggableId={`item-${index}`} index={index}>
+                                                    {(provided, snapshot) => (
+                                                        <li
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            style={{
+                                                                ...provided.draggableProps.style,
+                                                                padding: '6px 10px',
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between'
+                                                            }}
+                                                        >
+                                                            <span>
+                                                                <DeleteOutlineIcon className='me-3' style={{ color: '#d52121', cursor: 'pointer' }} onClick={() => deleteSubCat(category.name, option.subCategory)} />
+                                                                <i className='fa fa-edit me-3' style={{ color: '#1976d2', fontSize: '15px', cursor: 'pointer' }} onClick={() => updateSubCat(category.name, option)}></i>
+                                                                {option.subCategory}
+                                                            </span>
+                                                            {option.labelImage ? (
+                                                                <span style={{ display: 'flex', gap: '15px' }}>
+                                                                    <img src={`${serverUrl}${option.labelImage}`} style={{ height: '25px', width: '100px', objectFit: 'contain', border: '1px solid #e8e8e8' }} />
+                                                                    <div {...provided.dragHandleProps}>
+                                                                        <DragIndicatorIcon />
+                                                                    </div>
+                                                                </span>
+                                                            ) : option.labelText && option.labelImage == null ? (
+                                                                <span style={{ display: 'flex', gap: '15px' }}>
+                                                                    <span style={{
+                                                                        width: '100px',
+                                                                        background: `${option.labelBg}`,
+                                                                        fontSize: '12px',
+                                                                        fontWeight: '600',
+                                                                        display: 'flex',
+                                                                        justifyContent: 'center',
+                                                                        alignItems: 'center'
+                                                                    }}>
+                                                                        {option.labelText}
+                                                                    </span>
+                                                                    <div {...provided.dragHandleProps}>
+                                                                        <DragIndicatorIcon />
+                                                                    </div>
+                                                                </span>
+                                                            ) : (
+                                                                <span style={{ display: 'flex', gap: '15px' }}>
+                                                                    <span style={{ width: '100px', background: `${option.labelBg}` }}>{option.labelText}</span>
+                                                                    <div {...provided.dragHandleProps}>
+                                                                        <DragIndicatorIcon />
+                                                                    </div>
+                                                                </span>
+                                                            )}
+                                                        </li>
+                                                    )}
+                                                </Draggable>
+                                            )) : 'No tag found !'}
+                                            {provided.placeholder}
+                                        </ul>
+                                    )}
+                                </Droppable>
+                            </DragDropContext>
+                        </TabPanel>
+                    ))}
+
                 </Box>
             </Box>
+
+            <Modal
+                open={modelOpen}
+                onClose={handleCloseModel}
+                aria-labelledby="modal-modal-title"
+                aria-describedby="modal-modal-description"
+            >
+                <div>
+                    <SubcategoryDetails data={tagPopopData} refresh={refreshIt} closeModel={handleCloseModel} />
+                </div>
+            </Modal>
+
         </>
     );
 }

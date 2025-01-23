@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const { User, Product, CsvData, filterData, inventoryUpdateHistory } = require('../models/user-models')
 const axios = require('axios');
 const async = require('async');
-const {performUpdateInventory} = require('../services/inventryUpdate')
+const { performUpdateInventory } = require('../services/inventryUpdate')
 
 // for csv file upload
 const fs = require('fs');
@@ -239,7 +239,7 @@ async function processCsvFile(filePath) {
                 let capitalizedMake = data.Make.trim().toLowerCase().replace(/\b\w/g, function (char) {
                     return char.toUpperCase();
                 });
-                let combineEngineType = `${data.Engine? data.Engine.trim() : ''}${data.EngineType? ` ${data.EngineType.trim()}` : ''}${data.FuelType ? ` ${data.FuelType.trim()}` : ''}${data['BHP'] ? ` (${data['BHP'].trim()})` : ''}`;
+                let combineEngineType = `${data.Engine ? data.Engine.trim() : ''}${data.EngineType ? ` ${data.EngineType.trim()}` : ''}${data.FuelType ? ` ${data.FuelType.trim()}` : ''}${data['BHP'] ? ` (${data['BHP'].trim()})` : ''}`;
                 const transformed = {
                     make: data.Make.trim().toLowerCase(),
                     model: data.SubModel ? `${data.Model.trim()} ${data.SubModel.trim()}`.toLowerCase() : data.Model.trim().toLowerCase(),
@@ -699,6 +699,47 @@ const updateCategory = async (req, res) => {
     }
 };
 
+const updateSubCategory = async (req, res) => {
+    try {
+        // console.log(req)
+        const imagePath = req.file ? `/uploads/images/${req.file.filename}` : null;
+        const query = { "options.subCategory": req.body.oldSubCategory };
+        let update = {
+            $set: {
+                "options.$.subCategory": req.body.subCategory,
+                "options.$.labelBg": req.body.labelBg,
+                "options.$.labelText": req.body.labelText
+            }
+        };
+
+        if (imagePath) {
+            update.$set["options.$.labelImage"] = imagePath;
+        } else if (req.body.labelImage === 'removeImage') {
+            update.$set["options.$.labelImage"] = null;
+        }
+        const data = await filterData.findOneAndUpdate(query, update, { new: true });
+        res.status(200).send(data);
+
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error in updating category',
+            error: error.message
+        });
+    }
+};
+
+const arrangeOrderSubCat = async (req, res) => {
+    try {
+        const category = await filterData.findOneAndUpdate(
+            { name: req.body.name },
+            { $set: { options: req.body.options } }
+        )
+        res.status(200).send('subCategory re-arranged')
+    } catch (error) {
+        res.status(500).send('error in arranging subCategory')
+    }
+}
+
 const getCategories = async (req, res) => {
     try {
         const categories = await filterData.find();
@@ -763,7 +804,7 @@ const removeAllDuplicates = async (req, res) => {
                     count: { $gt: 1 } // filters groups having more than one document
                 }
             }
-        ]);
+        ], { allowDiskUse: true });
 
         // Step 2: Remove duplicates
         let countRemoved = 0;
@@ -829,6 +870,8 @@ module.exports = {
     addCategory,
     getCategories,
     updateCategory,
+    updateSubCategory,
+    arrangeOrderSubCat,
     deleteSubCategory,
     removeAllDuplicates,
     updateInventory,
