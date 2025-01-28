@@ -383,7 +383,7 @@ const getCsvData = async (req, res) => {
             .limit(limit);
 
         // Count only the documents that match the query
-        const total = await CsvData.estimatedDocumentCount()
+        const total = search != "" ? await CsvData.countDocuments(query) : await CsvData.estimatedDocumentCount();
 
         res.status(200).send({
             total,
