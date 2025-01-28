@@ -14,6 +14,10 @@ const authenticate = async (req, res, next) => {
         if (!rootUser) {
             return res.status(401).send("User not found. Please log in again.");
         }
+
+        // Clean up expired tokens before proceeding
+        await rootUser.cleanupExpiredTokens();
+
         req.token = token;
         req.validUser = rootUser;
         req.userId = rootUser._id;

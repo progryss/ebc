@@ -206,6 +206,22 @@ userSchema.methods.generateToken = async function () {
     }
 };
 
+// Method to clean up expired tokens
+userSchema.methods.cleanupExpiredTokens = async function () {
+    // Filter out expired tokens
+    this.tokens = this.tokens.filter(tokenObj => {
+        try {
+            jwt.verify(tokenObj.token, tokenKey);
+            return true; // keep the token if it's still valid
+        } catch (error) {
+            return false; // remove the token if it's expired
+        }
+    });
+
+    // Optionally save the user document if you want the method to save changes automatically
+    await this.save();
+};
+
 const User = mongoose.model('User', userSchema);
 const Product = mongoose.model('Shopify Product', productSchema);
 const CsvData = mongoose.model('Csv Option', csvDataSchema);

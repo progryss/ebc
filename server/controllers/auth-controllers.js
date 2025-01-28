@@ -322,9 +322,16 @@ const uploadCsvData = async (req, res) => {
         // Assume a function processCsvFile that processes your CSV file
         await processCsvFile(req.file.path);
         res.status(200).send('csv uploaded successfully.');
+        fs.unlinkSync(req.file.path);
     } catch (error) {
         console.log('Error uploading csv:', error);
         res.status(500).send('Error uploading csv');
+        try {
+            fs.unlinkSync(req.file.path);
+            console.log('File was deleted after a failure');
+        } catch (deleteError) {
+            console.error('Failed to delete the file after processing error:', deleteError);
+        }
     }
 };
 
@@ -376,7 +383,7 @@ const getCsvData = async (req, res) => {
             .limit(limit);
 
         // Count only the documents that match the query
-        const total = await CsvData.countDocuments(query);
+        const total = await CsvData.estimatedDocumentCount()
 
         res.status(200).send({
             total,
@@ -409,7 +416,7 @@ const getCsvDataYears = async (req, res) => {
         const selectedMake = req.query.make;
 
         // Check if the selected make are provided
-        if ( !selectedMake) {
+        if (!selectedMake) {
             return res.status(400).json({ error: 'Selected make are required' });
         }
 
