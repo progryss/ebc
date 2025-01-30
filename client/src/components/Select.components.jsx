@@ -13,6 +13,7 @@ import { useProgressToast } from './customHooks/useProgressToast';
 import axios from 'axios';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import SortIcon from '@mui/icons-material/Sort';
 
 const serverUrl = process.env.REACT_APP_SERVER_URL;
 
@@ -103,6 +104,11 @@ export default function CustomizedMenus({ user }) {
     setAnchorEl(null);
   };
 
+  const visitProductSortingInfo = () => {
+    navigate('/sorting-tags')
+    setAnchorEl(null);
+  };
+
   const goToDash = () => {
     navigate('/');
     setAnchorEl(null);
@@ -144,6 +150,12 @@ export default function CustomizedMenus({ user }) {
           <LocalOfferIcon />
           Filter Tags
         </MenuItem>
+        {user.role && (
+          <MenuItem onClick={visitProductSortingInfo} disableRipple>
+            <SortIcon />
+            Sorting Tags
+          </MenuItem>
+        )}
         <MenuItem onClick={changePassword} disableRipple>
           <EditIcon />
           Change Password
@@ -154,12 +166,10 @@ export default function CustomizedMenus({ user }) {
             Users
           </MenuItem>
         )}
-        {user.role && (
-          <MenuItem onClick={inventoryStore} disableRipple>
-            <InventoryIcon />
-            Inventory
-          </MenuItem>
-        )}
+        <MenuItem onClick={inventoryStore} disableRipple>
+          <InventoryIcon />
+          Inventory
+        </MenuItem>
         <MenuItem onClick={handleLogout} disableRipple>
           <LogoutIcon />
           Logout

@@ -279,7 +279,7 @@ function FilterTags() {
                                         type="color"
                                         value={color}
                                         onChange={e => setColor(e.target.value)}
-                                        style={{ width: '183px', marginLeft: '104px' }}
+                                        style={{ width: '183px', marginLeft: '104px',border:'none' }}
                                     />
                                 </Box>
                                 <Box className="d-flex mt-3" sx={{ alignItems: 'center' }}>
@@ -298,7 +298,7 @@ function FilterTags() {
                                         <div
                                             {...getRootProps()}
                                             style={{
-                                                border: '2px dashed rgb(204, 204, 204)',
+                                                border: '1px dashed rgb(204, 204, 204)',
                                                 cursor: 'pointer',
                                                 height: '50px',
                                                 display: 'flex',

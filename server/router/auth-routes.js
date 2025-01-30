@@ -88,6 +88,7 @@ router.post('/delete-csv', Controler.deleteCsvData);
 router.delete('/delete-rows', Controler.deleteMultipleRows);
 router.put('/update-row', Controler.updateRow);
 router.post('/add-row', Controler.addRow);
+router.delete('/remove-duplicateCsv', Controler.removeAllDuplicates);
 
 router.get('/csv-data', Controler.getCsvData);
 router.get('/csv-data-makes', Controler.getCsvDataMakes);
@@ -99,10 +100,9 @@ router.post('/get-products-by-skus', Controler.getProductsBySkus);
 
 router.post('/sync-products', Controler.syncProductFromShopify);
 router.post('/delete-products', Controler.deleteProductFromDb);
+router.post('/product-update-notify', Controler.productWebhook)
 
 router.get('/upload/progress', Controler.progress);
-
-router.post('/product-update-notify', Controler.productWebhook)
 
 router.post('/add-category', Controler.addCategory);
 router.get('/get-category', Controler.getCategories);
@@ -110,11 +110,11 @@ router.put('/update-category', uploadImage.single('labelImage'), Controler.updat
 router.put('/update-subcategory', uploadImage.single('labelImage'), Controler.updateSubCategory);
 router.put('/update-subcategory-order', Controler.arrangeOrderSubCat);
 router.delete('/delete-subCategory', Controler.deleteSubCategory);
-router.delete('/remove-duplicateCsv', Controler.removeAllDuplicates);
+router.put('/update-sorting-tags',Controler.updateSortingTags);
+router.get('/sorting-tags',Controler.getSortingTags)
 
 router.get('/fresh-inventory', Controler.updateInventory);
 router.get('/get-inventory-history',Controler.getInventoryHistory);
-
 router.get('/inventory-events', invEventController);
 
 module.exports = router;

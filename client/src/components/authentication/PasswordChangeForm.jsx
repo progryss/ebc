@@ -182,7 +182,7 @@ export default function PasswordChange(props) {
 
 
     return (
-        <SignInContainer direction="column" justifyContent="space-between" height="100vh" sx={{ backgroundColor: "whitesmoke" }} >
+        <SignInContainer direction="column" justifyContent="space-between" sx={{ backgroundColor: "whitesmoke", height:"calc(100vh - 76px)" }} >
             <ThemeProvider theme={theme}>
                 <Card variant="outlined">
                     <Typography
