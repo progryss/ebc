@@ -8,6 +8,7 @@ import Dashboard from './components/Dashboard';
 import Users from './components/users';
 import FilterTags from './components/filterTags';
 import InventoryStore from './components/inventoryStore';
+import SortingTags from './components/sortingTags';
 
 const theme = createTheme({
   typography: {
@@ -57,6 +58,15 @@ const router = createBrowserRouter([
       <AuthGuard>
         <AppHeader />
         <FilterTags />
+      </AuthGuard>
+    )
+  },
+  {
+    path: "/sorting-tags",
+    element: (
+      <AuthGuard>
+        <AppHeader />
+        <SortingTags />
       </AuthGuard>
     )
   },

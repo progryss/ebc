@@ -222,11 +222,18 @@ userSchema.methods.cleanupExpiredTokens = async function () {
     await this.save();
 };
 
+const sortTagSchema = new mongoose.Schema({
+    sortTag:{
+        type:'String'
+    }
+})
+
 const User = mongoose.model('User', userSchema);
 const Product = mongoose.model('Shopify Product', productSchema);
 const CsvData = mongoose.model('Csv Option', csvDataSchema);
 const filterData = mongoose.model('Filter Category', filterDataSchema);
 const inventoryData = mongoose.model('Inventory Queries', inventoryDataSchema);
 const inventoryUpdateHistory = mongoose.model('Inventory History',inventoryUpdateHistorySchema);
+const SortTags = mongoose.model('Sort Tag',sortTagSchema);
 
-module.exports = { User, Product, CsvData, filterData, inventoryData, inventoryUpdateHistory };
+module.exports = { User, Product, CsvData, filterData, inventoryData, inventoryUpdateHistory, SortTags };
