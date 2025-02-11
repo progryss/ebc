@@ -176,7 +176,7 @@ function RowDetails({ data, refresh, closeModel }) {
                                         <input
                                             type="text"
                                             className="label-value"
-                                            onChange={(e) => handleChange('year', (e.target.value).split(','))}
+                                            onChange={(e) => handleChange('year', e.target.value)}
                                             readOnly={isReadOnly}
                                             value={flyObject.year ? flyObject.year : ''}
                                         />
