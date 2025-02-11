@@ -150,12 +150,10 @@ export default function CustomizedMenus({ user }) {
           <LocalOfferIcon />
           Filter Tags
         </MenuItem>
-        {user.role && (
-          <MenuItem onClick={visitProductSortingInfo} disableRipple>
-            <SortIcon />
-            Sorting Tags
-          </MenuItem>
-        )}
+        <MenuItem onClick={visitProductSortingInfo} disableRipple>
+          <SortIcon />
+          Sorting Tags
+        </MenuItem>
         <MenuItem onClick={changePassword} disableRipple>
           <EditIcon />
           Change Password

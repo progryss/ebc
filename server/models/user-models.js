@@ -48,6 +48,9 @@ const productSchema = new mongoose.Schema({
     image_src: {
         type: String
     },
+    images: {
+        type: Array
+    },
     tags: {
         type: [String],
     },
