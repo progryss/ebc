@@ -607,3 +607,6 @@
       border-color: rgb(58, 33, 220);
       outline-width: 0;
     }
+    .searchParentWrapper .loader{
+      margin-left: 0;
+    }

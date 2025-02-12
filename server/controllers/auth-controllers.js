@@ -367,12 +367,11 @@ const getCsvData = async (req, res) => {
     const limit = parseInt(req.query.limit) || 100;  // Default and maximum rows per page
     const skip = (page - 1) * limit;
     const search = req.query.search;
-
     // Build the query object
     let query = {};
     if (search) {
         query = {
-            $text: { $search: search } // Using text search for efficiency
+            $text: { $search: `"${search}"` } // Using text search for efficiency
         };
     }
 
@@ -380,8 +379,7 @@ const getCsvData = async (req, res) => {
         // Find documents based on the query
         const csvData = await CsvData.find(query)
             .skip(skip)
-            .limit(limit);
-
+            .limit(limit); 
         // Count only the documents that match the query
         const total = search != "" ? await CsvData.countDocuments(query) : await CsvData.estimatedDocumentCount();
 

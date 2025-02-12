@@ -10,6 +10,7 @@ import Button from '@mui/material/Button';
 import Modal from '@mui/material/Modal';
 import AddRow from "./addRow";
 import { useProgressToast } from "./customHooks/useProgressToast";
+import Loader from "./loader";
 const serverUrl = process.env.REACT_APP_SERVER_URL;
 
 const rowsPerPage = 100;
@@ -44,10 +45,14 @@ export default function Dashboard() {
 
   const [searchString, setSearchString] = useState('')
   const [search, setSearch] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     async function fetchCsvData(page) {
       const url = `${serverUrl}/api/csv-data?page=${page}&limit=${rowsPerPage}&search=${search}`;
+      if(search !== ''){
+        setIsLoading(true)
+        console.log(search)      }
       try {
         const response = await fetch(url, {
           method: 'GET',
@@ -96,6 +101,9 @@ export default function Dashboard() {
             setFilteredResults(enrichedData);
             setSelectAll(false);
           }
+        }
+        if(search !== ''){
+          setIsLoading(false)
         }
       } catch (err) {
         console.log(err, "Error in Getting Members");
@@ -362,17 +370,17 @@ export default function Dashboard() {
   };
 
   function capitalizeWords(str) {
-    return str.toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
-  }  
+    return str.toLowerCase().replace(/(?:^|\s)\S/g, function (a) { return a.toUpperCase(); });
+  }
 
-  const deleteDuplicateCsv = async()=>{
+  const deleteDuplicateCsv = async () => {
     const userResponse = window.confirm('Are you sure you want to delete?');
     if (!userResponse) return;
     const toastId = showProgressToast('Deleting Duplicates');
     updateProgress(toastId, 'loader', 'Deleting Duplicates');
     try {
       const response = await axios.delete(`${serverUrl}/api/remove-duplicateCsv`);
-      if(response.status === 200){
+      if (response.status === 200) {
         refreshIt()
         finalizeToast(toastId, true, response.data);
       }
@@ -397,14 +405,27 @@ export default function Dashboard() {
                     onChange={e => setSearchString(e.target.value)}
                   />
                   <div className="input-group-append">
-                    <button
-                      className="btn border search-icon-custom"
-                      type="button"
-                      style={{ height: '100%' }}
-                      onClick={() => setSearch(searchString)}
-                    >
-                      <i className="fa fa-search"></i>
-                    </button>
+                    {
+                      isLoading ? (
+                        <button
+                          className="btn border search-icon-custom"
+                          type="button"
+                          style={{ height: '100%',cursor:'wait' }}
+                        >
+                          <Loader />
+                        </button>
+                      ) : (
+                        <button
+                          className="btn border search-icon-custom"
+                          type="button"
+                          style={{ height: '100%' }}
+                          onClick={() => setSearch(searchString)}
+                        >
+                          <i className="fa fa-search"></i>
+                        </button>
+                      )
+                    }
+
                     <RefreshIcon sx={{ cursor: 'pointer', marginLeft: '10px' }} onClick={() => {
                       setSearch('');
                       setSearchString('');
@@ -577,7 +598,7 @@ export default function Dashboard() {
                             } else {
                               return (
                                 <td key={`row-${index}`} >
-                                  <span className={column.id}> {column.id === 'included' ? row[column.id].join(', ') : column.id === 'make' ? row[column.id].toUpperCase() : column.id === 'model' ? row[column.id].toUpperCase() :  column.id === 'engineType' ? capitalizeWords(row[column.id]) : row[column.id] } </span>
+                                  <span className={column.id}> {column.id === 'included' ? row[column.id].join(', ') : column.id === 'make' ? row[column.id].toUpperCase() : column.id === 'model' ? row[column.id].toUpperCase() : column.id === 'engineType' ? capitalizeWords(row[column.id]) : row[column.id]} </span>
                                 </td>
                               );
                             }
