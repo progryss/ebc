@@ -56,7 +56,7 @@ const updateInventoryInDB = async (notificationResult) => {
                 { "variants.sku": { $ne: "" } },
                 { "variants.sku": { $ne: null } }
             ]
-        })
+        }).limit(10)
 
         const allSkuArr = products.flatMap(product => product.variants.map(variant => variant.sku ? ({
             sku: variant.sku,
