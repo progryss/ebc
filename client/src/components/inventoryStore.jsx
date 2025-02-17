@@ -126,9 +126,9 @@ function InventoryStore() {
 
   return (
     <div style={{ padding: '15px 10px', maxWidth: '1200px', margin: 'auto' }}>
-      {/* <Button onClick={saveFreshInventory} variant='contained' sx={{ marginBottom: '10px' }} disabled={notification?.startTimeDb !== '' ?true:false}>
+      <Button onClick={saveFreshInventory} variant='contained' sx={{ marginBottom: '10px' }} disabled={notification?.startTimeDb !== '' ?true:false}>
         Update Inventory
-      </Button> */}
+      </Button>
       {
         notification.startTimeDb !== '' && notification.endTimeStore === '' ? (
           <div style={cardDesign}>
