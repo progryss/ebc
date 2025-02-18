@@ -152,6 +152,9 @@ const inventoryDataSchema = new mongoose.Schema({
     inventory_item_id:{
         type:String
     },
+    current_qt:{
+        type:Number
+    },
     available:{
         type:Number
     },
