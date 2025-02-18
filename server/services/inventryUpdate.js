@@ -58,7 +58,7 @@ const updateInventoryInDB = async (notificationResult) => {
                 { "variants.sku": { $ne: "" } },
                 { "variants.sku": { $ne: null } }
             ]
-        }).limit(1000)
+        })
 
         const allSkuArr = products.flatMap(product => product.variants.map(variant => variant.sku ? ({
             sku: variant.sku,
@@ -104,15 +104,18 @@ const updateInventoryInStore = async (notificationResult) => {
         sendToAll({ message: "Shopify Batch process started", result: notificationResult });
 
         let count = 0;
-        let results = []
+        let results = [];
+        let totalResults = {count:0};
         for (const batch of batches) {
             count++;
-            const batchData = await Promise.allSettled(batch.map(element => element && updateShopifyProductStock(element)));
+            const batchData = await Promise.allSettled(batch.map(element => element && updateShopifyProductStock(element,totalResults)));
             results.push(batchData)
             notificationResult.updatedSkuStore += batchData.length;
             // console.log(`Store Batch ${count} Updated with ${notificationResult.updatedSkuStore} skus`)
             sendToAll({ message: `Shopify Batch processed ${count}`, result: notificationResult });
         }
+        // console.log('-----------')
+        console.log(`store process successfully complete ${totalResults.count}`)
 
         notificationResult.endTimeStore = new Date()
         sendToAll({ message: "All Shopify Batch processed", result: notificationResult });
@@ -122,14 +125,13 @@ const updateInventoryInStore = async (notificationResult) => {
             notificationResult
         )
 
-        console.log('-----------')
-        console.log('store process successfully complete')
+
 
         // Now all delete the previous data
         await inventoryData.deleteMany({});
 
-        console.log('-----------')
-        console.log('all inventory queries successfully deleted from DB')
+        // console.log('-----------')
+        // console.log('all inventory queries successfully deleted from DB')
 
     } catch (error) {
         console.log('error in updating shopify inventory', error)
@@ -196,7 +198,7 @@ async function processBatches(allSkus, apiToken, locationId, notificationResult)
 
         result.updatedSku += inventoryObject.length;
         // console.log('-----------')
-        console.log('Inventory Data Saved To DB - ', inventoryObject.length)
+        // console.log('Inventory Data Saved To DB - ', inventoryObject.length)
 
         // console.log('-----------')
         // console.log('Failed Sku - ', result.failedSku.length)
@@ -237,17 +239,13 @@ async function sendBatchRequest(skuList, apiToken) {
     }
 }
 
-// Function to delay the next request
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function updateShopifyProductStock(element) {
-    const url = 'https://ebc-brake-shop.myshopify.com/admin/api/2024-10/graphql.json';
+async function updateShopifyProductStock(element,totalResults) {
+    const url = `${process.env.STORE_API_URL}/graphql.json`;
     const headers = {
         'Content-Type': 'application/json',
         'X-Shopify-Access-Token': process.env.STORE_API_PASSWORD
     };
+
     const query = `
         mutation InventorySet($input: InventorySetQuantitiesInput!) {
             inventorySetQuantities(input: $input) {
@@ -267,52 +265,76 @@ async function updateShopifyProductStock(element) {
             }
         }
     `;
+
     const variables = {
-        "input": {
-            "name": "available",
-            "reason": "correction",
-            "referenceDocumentUri": "logistics://some.warehouse/take/2023-01-23T13:14:15Z",
-            "quantities": [
-                {
-                    "inventoryItemId": `gid://shopify/InventoryItem/${element.inventory_item_id}`,
-                    "locationId": `gid://shopify/Location/${element.locationId}`,
-                    "quantity": element.available,
-                    "compareQuantity": element.current_qt
-                }
-            ]
+        input: {
+            name: "available",
+            reason: "correction",
+            referenceDocumentUri: "logistics://some.warehouse/take/2023-01-23T13:14:15Z",
+            quantities: [{
+                inventoryItemId: `gid://shopify/InventoryItem/${element.inventory_item_id}`,
+                locationId: `gid://shopify/Location/${element.locationId}`,
+                quantity: element.available,
+                compareQuantity: element.current_qt
+            }]
         }
     };
 
-    try {
-        let response = await axios.post(url, {
-            query: query,
-            variables: variables
-        }, { headers });
+    let attempt = 1; // Start with attempt 1
 
-        // Check if rate limit info is available
-        if (response.headers && response.headers['x-shopify-shop-api-call-limit']) {
-            const rateLimit = response.headers['x-shopify-shop-api-call-limit'];
-            const [used, limit] = rateLimit.split('/').map(Number);
+    while (attempt <= 5) { // Try up to 5 attempts
+        try {
+            let response = await axios.post(url, { query, variables }, { headers });
 
-            // If close to limit, delay next request
-            if (limit - used <= 5) {
-                console.log('Approaching rate limit, delaying next request...');
-                await delay(10000);  // Delay for 10 seconds
+            // If rate limit is close, apply exponential backoff
+            if (response.headers['x-shopify-shop-api-call-limit']) {
+                const [used, limit] = response.headers['x-shopify-shop-api-call-limit'].split('/').map(Number);
+                if (limit - used < 10) {
+                    let delayTime = Math.pow(2, attempt) * 1000; // Exponential backoff formula
+                    // console.log(`Rate limit approaching, waiting for ${delayTime}ms`);
+                    await delay(delayTime);
+                    attempt++;
+                    continue; // Retry the request after delay
+                }
             }
-        }
 
-        if (response.data.errors) {
-            console.error('GraphQL errors:', response.data.errors);
+            if (response.data.errors) {
+                if (response.data.errors.some(error => error.extensions.code === 'THROTTLED')) {
+                    throw new Error('Throttled');
+                }
+                // console.error('GraphQL errors:', response.data.errors);
+                return null;
+            }
+            if(response.data.data.inventorySetQuantities.inventoryAdjustmentGroup != null){
+                totalResults.count += 1;
+                // console.log(totalResults)
+            }
+
+            // console.log('Inventory update successful:', response.data.data.inventorySetQuantities.inventoryAdjustmentGroup);
+            return response.data.data.inventorySetQuantities;
+        } catch (error) {
+            if (error.message === 'Throttled' && attempt < 5) {
+                let delayTime = Math.pow(2, attempt) * 1000;
+                // console.log(`Throttled. Retrying after ${delayTime} milliseconds...`);
+                await delay(delayTime);
+                attempt++;
+                continue; // Retry the request after delay
+            }
+            // console.error('Error updating inventory:', error);
             return null;
         }
-
-        // console.log('Inventory update successful:', response.data.data);
-        // return response.data.data.inventorySetQuantities;
-    } catch (error) {
-        console.error('Error updating inventory:', error);
-        // return null;
     }
+
+    // console.log('Failed to update after maximum attempts due to throttling.');
+    return null; // Return null after maximum attempts
 }
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+
 
 
 module.exports = {
