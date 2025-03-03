@@ -3,7 +3,8 @@ const bcrypt = require("bcryptjs");
 const { User, Product, CsvData, filterData, inventoryUpdateHistory, SortTags } = require('../models/user-models')
 const axios = require('axios');
 const async = require('async');
-const { performUpdateInventory } = require('../services/inventryUpdate')
+const { performUpdateInventory } = require('../services/inventryUpdate');
+const { redisClient } = require('../redisClient');
 
 // for csv file upload
 const fs = require('fs');
@@ -379,7 +380,7 @@ const getCsvData = async (req, res) => {
         // Find documents based on the query
         const csvData = await CsvData.find(query)
             .skip(skip)
-            .limit(limit); 
+            .limit(limit);
         // Count only the documents that match the query
         const total = search != "" ? await CsvData.countDocuments(query) : await CsvData.estimatedDocumentCount();
 
@@ -397,16 +398,36 @@ const getCsvData = async (req, res) => {
 
 const getCsvDataMakes = async (req, res) => {
     try {
+        // Use a clear key name for the cache
+        const cacheKey = 'uniqueMakes';
+
+        // 1. Check if data is cached in Redis
+        const cachedData = await redisClient.get(cacheKey);
+        if (cachedData) {
+            console.log('Returning unique makes from Redis cache');
+            return res.status(200).send(JSON.parse(cachedData));
+        }
+
+        // 2. If not found in cache, fetch from MongoDB
+        console.log('Cache miss. Querying MongoDB...');
         const uniqueMakes = await CsvData.aggregate([
-            { $group: { _id: "$make" } }, // Group documents by "make" field
-            { $project: { _id: 0, make: "$_id" } } // Project the "make" field without _id
+            { $group: { _id: "$make" } },
+            { $project: { _id: 0, make: "$_id" } }
         ]);
-        res.status(200).send(uniqueMakes)
+
+        // 3. Store the result in Redis for next time
+        await redisClient.set(cacheKey, JSON.stringify(uniqueMakes), {
+            EX: 43200
+        });
+
+        // 4. Send the fresh data
+        return res.status(200).send(uniqueMakes);
+
     } catch (error) {
         console.error('Error fetching unique makes:', error);
-        res.status(500).json({ error: 'Failed to fetch unique makes' });
+        return res.status(500).json({ error: 'Failed to fetch unique makes' });
     }
-}
+};
 
 const getCsvDataYears = async (req, res) => {
     try {
@@ -847,13 +868,13 @@ const updateInventory = async (req, res) => {
     }
 }
 
-const updateSortingTags = async(req,res)=>{
+const updateSortingTags = async (req, res) => {
     try {
         const data = req.body.sortingTags;
         await SortTags.updateOne(
             {},
-            { $set: {sortTag:data}},
-            {upsert:true}
+            { $set: { sortTag: data } },
+            { upsert: true }
         )
         res.status(200).send('sorting tags updated')
     } catch (error) {
@@ -861,7 +882,7 @@ const updateSortingTags = async(req,res)=>{
     }
 }
 
-const getSortingTags = async(req,res)=>{
+const getSortingTags = async (req, res) => {
     try {
         const response = await SortTags.find();
         res.status(200).send(response)
@@ -869,6 +890,17 @@ const getSortingTags = async(req,res)=>{
         res.status(500).send('error in getting sorting tags')
     }
 }
+
+const flushData = async (req, res) => {
+    try {
+        await redisClient.flushAll(); 
+        console.log('Flushed entire Redis DB(s)');
+        return res.status(200).send('All Cache Cleared');
+    } catch (error) {
+        console.error('Error flushing Redis:', error);
+        return res.status(500).send('Failed to clear cache');
+    }
+};
 
 module.exports = {
     validateUser,
@@ -905,5 +937,6 @@ module.exports = {
     updateInventory,
     getInventoryHistory,
     updateSortingTags,
-    getSortingTags
+    getSortingTags,
+    flushData
 }; 

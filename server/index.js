@@ -5,6 +5,8 @@ const helmet = require('helmet');
 const path = require('path');
 const router = require('./router/auth-routes');
 const cookieParser = require('cookie-parser');
+const { connectRedis } = require('./redisClient');
+
 require('dotenv').config();
 
 const app = express();
@@ -52,12 +54,19 @@ app.use("/api/", router);
 // Serve static files from the uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Connect to database and start server
-connectDb().then(() => {
-    const port = 5000;
-    app.listen(port, () => {
+(async () => {
+    try {
+      await connectDb(); 
+      await connectRedis(); 
+      const port = process.env.PORT;
+      app.listen(port, () => {
         console.log(`Server started on port ${port}`);
-    })
-}).catch((err) => {
-    console.log(err, "ERROR in Connection");
-});
+      });
+    } catch (err) {
+      console.error('Error during startup:', err);
+      // Optionally process.exit(1) if this is a fatal connection error
+    }
+  })();
+  
+
+

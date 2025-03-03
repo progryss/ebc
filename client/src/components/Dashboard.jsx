@@ -50,9 +50,9 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchCsvData(page) {
       const url = `${serverUrl}/api/csv-data?page=${page}&limit=${rowsPerPage}&search=${search}`;
-      if(search !== ''){
+      if (search !== '') {
         setIsLoading(true)
-        console.log(search)      }
+      }
       try {
         const response = await fetch(url, {
           method: 'GET',
@@ -102,7 +102,7 @@ export default function Dashboard() {
             setSelectAll(false);
           }
         }
-        if(search !== ''){
+        if (search !== '') {
           setIsLoading(false)
         }
       } catch (err) {
@@ -389,6 +389,23 @@ export default function Dashboard() {
       finalizeToast(toastId, false, '', 'Failed to delete Csv Duplicates.');
     }
   }
+
+  const clearAllCaches = async () => {
+    const userResponse = window.confirm('Are you sure you want to clear?');
+    if (!userResponse) return;
+    const toastId = showProgressToast('Deleting Cache');
+    updateProgress(toastId, 'loader', 'Deleting Cache');
+    try {
+      const response = await axios.delete(`${serverUrl}/api/flush-all`);
+      if (response.status === 200) {
+        finalizeToast(toastId, true, response.data);
+      }
+    } catch (error) {
+      console.log('error in deleting cache')
+      finalizeToast(toastId, false, '', 'Failed to delete Cache.');
+    }
+  };
+
   return (
     <>
       <div className="container-fluid customer-container">
@@ -410,7 +427,7 @@ export default function Dashboard() {
                         <button
                           className="btn border search-icon-custom"
                           type="button"
-                          style={{ height: '100%',cursor:'wait' }}
+                          style={{ height: '100%', cursor: 'wait' }}
                         >
                           <Loader />
                         </button>
@@ -502,7 +519,8 @@ export default function Dashboard() {
                 </div>
               </Modal>
               <Button variant="contained" onClick={deleteRowFromTable} className="mb-3 me-2"><i className="fa fa-trash me-1"></i> Delete Rows</Button>
-              <Button variant="contained" onClick={deleteDuplicateCsv} className="mb-3"><i className="fa fa-trash me-1"></i> Delete Duplicate Rows</Button>
+              <Button variant="contained" onClick={deleteDuplicateCsv} className="mb-3 me-2"><i className="fa fa-trash me-1"></i> Delete Duplicate Rows</Button>
+              <Button variant="contained" onClick={clearAllCaches} className="mb-3"><i className="fas fa-sync me-1"></i> Clear Cache</Button>
             </div>
 
             <div className="table-responsive customerTable">
