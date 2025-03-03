@@ -117,4 +117,6 @@ router.get('/fresh-inventory', Controler.updateInventory);
 router.get('/get-inventory-history',Controler.getInventoryHistory);
 router.get('/inventory-events', invEventController);
 
+router.delete('/flush-all',Controler.flushData);
+
 module.exports = router;
