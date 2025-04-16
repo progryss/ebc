@@ -14,8 +14,8 @@ function InventoryStore() {
     failedSkuDb: [],
     endTimeDb: '',
     startTimeStore: '',
-    updatedSkuStore: 0,
-    failedSkuStore: 0,
+    updatedSkuStore: [],
+    failedSkuStore: [],
     endTimeStore: ''
   }
 
@@ -109,7 +109,7 @@ function InventoryStore() {
     gridTemplateColumns: '3fr 1fr 1fr 2fr 2fr'
   }
 
-  const downloadFailedSkus = (failedSkus, index) => {
+  const downloadFailedSkus = (failedSkus) => {
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "S.No.,SKU\n";
     failedSkus.forEach((sku, index) => {
@@ -118,7 +118,26 @@ function InventoryStore() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `failed_skus_list_${index}.csv`);
+    link.setAttribute("download", `failed_sku_third_party.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  const downloadUpdatedSkus = (updatedSkus,failedSkus) => {
+    let sn = 1;
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "S.No.,SKU,Quantity,Status\n";
+    updatedSkus.forEach((element) => {
+      csvContent += `${sn++},${element.sku},${element.quantities},Updated\n`;
+    });
+    failedSkus.forEach((element) => {
+      csvContent += `${sn++},${element.sku}, ,Failed\n`;
+    });
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `shopify_sku_updates.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -126,9 +145,9 @@ function InventoryStore() {
 
   return (
     <div style={{ padding: '15px 10px', maxWidth: '1200px', margin: 'auto' }}>
-      <Button onClick={saveFreshInventory} variant='contained' sx={{ marginBottom: '10px' }} disabled={notification?.startTimeDb !== '' ?true:false}>
+      {/* <Button onClick={saveFreshInventory} variant='contained' sx={{ marginBottom: '10px' }} disabled={notification?.startTimeDb !== '' ?true:false}>
         Update Inventory
-      </Button>
+      </Button> */}
       {
         notification.startTimeDb !== '' && notification.endTimeStore === '' ? (
           <div style={cardDesign}>
@@ -165,8 +184,8 @@ function InventoryStore() {
                 </tr>
                 <tr style={rowDesign}>
                   <td>Shopify Inventory Update</td>
-                  <td>{notification.updatedSkuStore}</td>
-                  <td>{notification.failedSkuStore}</td>
+                  <td>{notification.updatedSkuStore.length}</td>
+                  <td>{notification.failedSkuStore.length}</td>
                   <td>
                     {notification.startTimeStore !== ''
                       ? `${formatDateAndTime(notification.startTimeStore)[0]} (${formatDateAndTime(notification.startTimeStore)[1]})`
@@ -228,8 +247,8 @@ function InventoryStore() {
                 </tr>
                 <tr style={rowDesign}>
                   <td>Shopify Inventory Update</td>
-                  <td>{history.updatedSkuStore}</td>
-                  <td>{history.failedSkuStore}</td>
+                  <td>{history.updatedSkuStore.length}</td>
+                  <td>{history.failedSkuStore.length}</td>
                   <td>
                     {history.startTimeStore !== ''
                       ? `${formatDateAndTime(history.startTimeStore)[0]} (${formatDateAndTime(history.startTimeStore)[1]})`
@@ -243,10 +262,15 @@ function InventoryStore() {
                 </tr>
               </tbody>
             </table>
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'end' }}>
+            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'end',gap:'45px' }}>
+              {history.updatedSkuStore.length > 0 &&
+                <button onClick={() => downloadUpdatedSkus(history.updatedSkuStore,history.failedSkuStore)} style={{ borderWidth: '0 0 1px 0', borderBottomColor: 'rgb(25 118 210 / 78%)', background: 'transparent', height: '23px' }}>
+                  Download Sku Updates - Shopify
+                </button>
+              }
               {history.failedSkuDb.length > 0 &&
-                <button onClick={() => downloadFailedSkus(history.failedSkuDb, 1)} style={{ borderWidth: '0 0 1px 0', borderBottomColor: 'rgb(25 118 210 / 78%)', background: 'transparent', height: '23px' }}>
-                  Download Failed (SKUs)
+                <button onClick={() => downloadFailedSkus(history.failedSkuDb)} style={{ borderWidth: '0 0 1px 0', borderBottomColor: 'rgb(25 118 210 / 78%)', background: 'transparent', height: '23px' }}>
+                  Download Failed Sku - Third-party
                 </button>
               }
             </div>
