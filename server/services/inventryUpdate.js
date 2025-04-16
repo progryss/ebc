@@ -11,8 +11,8 @@ const performUpdateInventory = async () => {
         failedSkuDb: [],
         endTimeDb: '',
         startTimeStore: '',
-        updatedSkuStore: 0,
-        failedSkuStore: 0,
+        updatedSkuStore: [],
+        failedSkuStore: [],
         endTimeStore: ''
     }
     updateInventoryInDB(notificationResult).then(result => {
@@ -58,7 +58,7 @@ const updateInventoryInDB = async (notificationResult) => {
                 { "variants.sku": { $ne: "" } },
                 { "variants.sku": { $ne: null } }
             ]
-        })
+        }).limit(700)
 
         const allSkuArr = products.flatMap(product => product.variants.map(variant => variant.sku ? ({
             sku: variant.sku,
@@ -104,14 +104,11 @@ const updateInventoryInStore = async (notificationResult) => {
         sendToAll({ message: "Shopify Batch process started", result: notificationResult });
 
         let count = 0;
-        let results = [];
         let totalResults = {count:0};
         for (const batch of batches) {
             count++;
-            const batchData = await Promise.allSettled(batch.map(element => element && updateShopifyProductStock(element,totalResults)));
-            results.push(batchData)
-            notificationResult.updatedSkuStore += batchData.length;
-            // console.log(`Store Batch ${count} Updated with ${notificationResult.updatedSkuStore} skus`)
+            await Promise.allSettled(batch.map(element => element && updateShopifyProductStock(element,totalResults,notificationResult)));
+        
             sendToAll({ message: `Shopify Batch processed ${count}`, result: notificationResult });
         }
         // console.log('-----------')
@@ -239,7 +236,7 @@ async function sendBatchRequest(skuList, apiToken) {
     }
 }
 
-async function updateShopifyProductStock(element,totalResults) {
+async function updateShopifyProductStock(element,totalResults,notificationResult) {
     const url = `${process.env.STORE_API_URL}/graphql.json`;
     const headers = {
         'Content-Type': 'application/json',
@@ -307,10 +304,19 @@ async function updateShopifyProductStock(element,totalResults) {
             }
             if(response.data.data.inventorySetQuantities.inventoryAdjustmentGroup != null){
                 totalResults.count += 1;
-                // console.log(totalResults)
+                console.log(totalResults)
+            }
+            if(response.data.data.inventorySetQuantities.userErrors.length != 0){
+                notificationResult.failedSkuStore.push({
+                    sku:element.sku
+                })
+            }else{
+                notificationResult.updatedSkuStore.push({
+                    sku:element.sku,
+                    quantities:element.available
+                })
             }
 
-            // console.log('Inventory update successful:', response.data.data.inventorySetQuantities.inventoryAdjustmentGroup);
             return response.data.data.inventorySetQuantities;
         } catch (error) {
             if (error.message === 'Throttled' && attempt < 5) {

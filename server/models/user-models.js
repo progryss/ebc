@@ -183,10 +183,10 @@ const inventoryUpdateHistorySchema = new mongoose.Schema({
         type:Date
     },
     updatedSkuStore:{
-        type:Number
+        type:Array
     },
     failedSkuStore:{
-        type:Number
+        type:Array
     },
     endTimeStore:{
         type:Date
