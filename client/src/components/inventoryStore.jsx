@@ -127,12 +127,12 @@ function InventoryStore() {
   const downloadUpdatedSkus = (updatedSkus,failedSkus) => {
     let sn = 1;
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "S.No.,SKU,Quantity,Status\n";
+    csvContent += "S.No.,SKU,Quantity (Third-party),Status\n";
     updatedSkus.forEach((element) => {
       csvContent += `${sn++},${element.sku},${element.quantities},Updated\n`;
     });
     failedSkus.forEach((element) => {
-      csvContent += `${sn++},${element.sku}, ,Failed\n`;
+      csvContent += `${sn++},${element.sku},${element.quantities},Failed\n`;
     });
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
