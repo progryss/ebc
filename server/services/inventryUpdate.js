@@ -19,6 +19,8 @@ const performUpdateInventory = async () => {
     failedSkuStore: [],
     endTimeStore: "",
   };
+  await syncProductFromShopify();
+
   updateInventoryInDB(notificationResult)
     .then((result) => {
       updateInventoryInStore(notificationResult);
@@ -114,7 +116,6 @@ const updateInventoryInDB = async (notificationResult) => {
 const updateInventoryInStore = async (notificationResult) => {
   try {
 
-    await syncProductFromShopify();
     // Fetch SKUs and inventory item of store product variants from db
     const freshInventoryList = await inventoryData.find();
     const batches = chunkArray(freshInventoryList, 200);
@@ -366,13 +367,10 @@ async function updateShopifyProductStock(
         console.log(totalResults);
       }
       if (response.data.data.inventorySetQuantities.userErrors.length != 0) {
-        console.log(
-          "err",
-          response.data.data.inventorySetQuantities.userErrors
-        );
         notificationResult.failedSkuStore.push({
           sku: element.sku,
           quantities: element.available,
+          reason:response.data.data.inventorySetQuantities.userErrors[0].message
         });
       } else {
         notificationResult.updatedSkuStore.push({
