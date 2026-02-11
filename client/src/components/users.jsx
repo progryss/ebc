@@ -89,7 +89,7 @@ export default function Users() {
                                 <TableCell size='small'>{user.name}</TableCell>
                                 <TableCell align="right" size='small' >{user.email}</TableCell>
                                 <TableCell align="right" size='small' >
-                                    {!user.role && (
+                                    {!user.role ? (
                                         <>
                                             <IconButton sx={{ marginRight: "10px" }} onClick={() => handleOpenEdit(user)} >
                                                 <EditIcon size='small' />
@@ -98,7 +98,7 @@ export default function Users() {
                                                 <DeleteIcon />
                                             </IconButton>
                                         </>
-                                    )}
+                                    ) : "Admin"}
                                 </TableCell>
                             </TableRow>
                         ))}

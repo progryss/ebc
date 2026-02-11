@@ -154,7 +154,7 @@ export default function Login(props) {
       <SignInContainer direction="column" justifyContent="space-between" height="100vh" >
         <Card variant="outlined">
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <img src={logo} alt='' width='150' />
+            <img src={logo} alt='' width='130' />
           </Box>
           <Typography
             component="h1"

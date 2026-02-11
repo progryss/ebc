@@ -1,9 +1,7 @@
-// server/redisClient.js
 const redis = require('redis');
 require('dotenv').config()
 
 // 1. Create a Redis client
-//    Adjust the URL if needed (e.g. from env vars or a remote host)
 const redisClient = redis.createClient({
   url: process.env.REDIS_URL,
 });
@@ -21,7 +19,19 @@ const connectRedis = async () => {
   }
 };
 
+const flushRedisData = async (req, res) => {
+    try {
+        await redisClient.flushAll(); 
+        console.log('Flushed entire Redis DB(s)');
+        return res.status(200).send('All Cache Cleared');
+    } catch (error) {
+        console.error('Error flushing Redis:', error);
+        return res.status(500).send('Failed to clear cache');
+    }
+};
+
 module.exports = {
   redisClient,
   connectRedis,
+  flushRedisData
 };

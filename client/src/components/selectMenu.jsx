@@ -60,7 +60,7 @@ const StyledMenu = styled((props) => (
   },
 }));
 
-export default function CustomizedMenus({ user }) {
+export default function SelectMenu({ user }) {
 
   const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -120,13 +120,13 @@ export default function CustomizedMenus({ user }) {
   }
 
   return (
-    <div>
+    <div style={{minWidth:'250px',textAlign:'end'}}>
       <Button
         id="demo-customized-button"
         aria-controls={open ? 'demo-customized-menu' : undefined}
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
-        variant="contained"
+        variant="outlined"
         disableElevation
         onClick={handleClick}
         endIcon={<KeyboardArrowDownIcon />}
