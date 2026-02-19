@@ -147,7 +147,7 @@ router.post('/get-products-by-skus', carControlers.getProductsBySkus);
 router.get('/bike-csv-data-makes', bikeControlers.getCsvDataMakes);
 router.get('/bike-csv-data-models', bikeControlers.getCsvDataModels);
 router.get('/bike-csv-data-years', bikeControlers.getCsvDataYears);
-router.get('/bike-csv-data-engineTypes', bikeControlers.getCsvDataEngineTypes);
+router.get('/bike-csv-data-subModels', bikeControlers.getCsvDataSubModels);
 router.get('/bike-csv-data-skus', bikeControlers.getCsvDataSkus);
 router.post('/get-bike-products-by-skus', bikeControlers.getProductsBySkus);
 

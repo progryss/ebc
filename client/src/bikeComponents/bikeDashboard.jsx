@@ -85,10 +85,17 @@ export default function BikeDashboard() {
               { id: "selectAll", title: "Select All" },
               { id: "make", title: "Make" },
               { id: "model", title: "Model" },
+              { id: "subModel", title: "Sub Model" },
+              { id: "engine", title: "Engine" },
               { id: "engineType", title: "Engine Type" },
-              { id: "year", title: "Year" },
+              { id: "fuelType", title: "Fuel Type" },
+              { id: "vehicleQualifier", title: "Vehicle Qualifier" },
+              { id: "years", title: "Year" },
+              { id: "bhp", title: "BHP" },
               { id: "fitmentPosition", title: "Fitment Position" },
-              { id: "discDiameter", title: "Disc Diameter" },
+              { id: "specialComments", title: "Special Comments" },
+              { id: "frontDiscDiameter", title: "Front Disc Diameter" },
+              { id: "rearDiscDiameter", title: "Rear Disc Diameter" },
               { id: "sku", title: "Part Code" },
             ];
             const savedColumns = JSON.parse(
@@ -122,7 +129,7 @@ export default function BikeDashboard() {
           setIsLoading(false);
         }
       } catch (err) {
-        console.log(err, "Error in Getting Members");
+        console.log(err, "Error in Getting data");
         navigate("/login");
       }
       const savedWidths = JSON.parse(localStorage.getItem("bikeColumnWidths"));
@@ -585,8 +592,6 @@ export default function BikeDashboard() {
                             />{" "}
                             {key === "sku"
                               ? "Part No"
-                              : key === "included"
-                              ? "Kit Components"
                               : key}
                           </label>
                         </li>
@@ -771,19 +776,29 @@ export default function BikeDashboard() {
                                   />
                                 </td>
                               );
+                            } else if (column.id === "years") {
+                              return (
+                                <td key={`row-${index}`}>
+                                  <span>
+                                    {row[column.id]?.length > 0
+                                      ? row[column.id].length === 1
+                                        ? row[column.id][0]
+                                        : `${row[column.id][0]}-${row[column.id][row[column.id].length - 1]}`
+                                      : ""}
+                                  </span>
+                                </td>
+                              );
                             } else {
                               return (
                                 <td key={`row-${index}`}>
                                   <span className={column.id}>
                                     {" "}
-                                    {column.id === "included"
-                                      ? row[column.id].join(", ")
-                                      : column.id === "make"
+                                    { column.id === "make"
                                       ? row[column.id].toUpperCase()
                                       : column.id === "model"
                                       ? row[column.id].toUpperCase()
-                                      : column.id === "engineType"
-                                      ? capitalizeWords(row[column.id])
+                                      : column.id === "subModel"
+                                      ? row[column.id].toUpperCase()
                                       : row[column.id]}{" "}
                                   </span>
                                 </td>

@@ -17,6 +17,7 @@ const addCategory = async (req, res) => {
 }
 
 const updateCategory = async (req, res) => {
+    console.log('cat',req.body)
     try {
 
         // Check if image is uploaded
@@ -48,6 +49,7 @@ const updateCategory = async (req, res) => {
 };
 
 const updateSubCategory = async (req, res) => {
+    console.log('subcat',req.body)
     try {
         // console.log(req)
         const imagePath = req.file ? `/uploads/images/${req.file.filename}` : null;

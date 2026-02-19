@@ -219,7 +219,7 @@ function FilterTags() {
         <>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', paddingTop: '20px' }}>
                 <Box className="ps-2">
-                    <Box>
+                    {/* <Box>
                         <p>Add Filter Section -</p>
                         <TextField
                             label="Enter Filter Heading"
@@ -239,7 +239,7 @@ function FilterTags() {
                         >
                             Add Heading
                         </Button>
-                    </Box>
+                    </Box> */}
                     <Box className='mt-3' >
                         <p>Add Filter Option - </p>
                         <Box>

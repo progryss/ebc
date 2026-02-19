@@ -10,19 +10,51 @@ const bikeCsvDataSchema = new mongoose.Schema({
         type: String,
         index: true // Adding index
     },
-    engineType: {
+    subModel:{
         type: String,
         index: true // Adding index
     },
-    year: {
+    engine:{
         type: String,
-        index: true // Adding index
+    },
+    engineType: {
+        type: String,
+    },
+    fuelType:{
+        type: String,
+    },
+    vehicleQualifier:{
+        type: String,
+    },
+    years: {
+        type: Array,
+    },
+    bhp:{
+        type: String,
+    },
+    valves:{
+        type: String,
     },
     fitmentPosition: {
         type: String,
-        index: true
+        index: true // Adding index
     },
-    discDiameter: {
+    specialComments:{
+        type: String
+    },
+    frontBrakeCaliperMake:{
+        type:String
+    },
+    rearBrakeCaliperMake:{
+        type:String
+    },
+    frontDiscDiameter: {
+        type: String
+    },
+    rearDiscDiameter: {
+        type: String
+    },
+    kitComponents:{
         type: String
     },
     sku: {
@@ -35,9 +67,9 @@ const bikeCsvDataSchema = new mongoose.Schema({
 bikeCsvDataSchema.index({
     make: 'text',
     model: 'text',
-    sku: 'text',
-    year: 'text',
-    fitmentPosition: 'text'
+    subModel: 'text',
+    fitmentPosition: 'text',
+    sku: 'text'
 });
 
 const BikeCsvData = mongoose.model('Bike Csv Option', bikeCsvDataSchema);

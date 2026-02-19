@@ -2,6 +2,33 @@ const fs = require('fs');
 const csv = require('fast-csv');
 const { BikeCsvData } = require('../../models/bike/csvDataModel');
 
+function getYearsInRange(rangeString) {
+  if (!rangeString) return [];
+  const parts = rangeString.split("-").map(str => str.trim());
+
+  // ✅ If only one year
+  if (parts.length === 1) {
+    return [parts[0]];
+  }
+
+  const start = parseInt(parts[0]);
+  const end = parseInt(parts[1]);
+
+  if (isNaN(start) || isNaN(end)) return [];
+
+  const min = Math.min(start, end);
+  const max = Math.max(start, end);
+
+  const years = [];
+
+  for (let year = min; year <= max; year++) {
+    years.push(year.toString());
+  }
+
+  return years;
+}
+
+
 async function insertBatch(batch, batchNumber) {
     console.log(`Inserting batch ${batchNumber} with ${batch.length} records.`);
     await BikeCsvData.insertMany(batch);
@@ -18,17 +45,25 @@ async function processCsvFile(filePath) {
         const stream = fs.createReadStream(filePath);
         const csvStream = csv.parse({ headers: true })
             .transform(data => {
-                let capitalizedMake = data.Make.trim().toLowerCase().replace(/\b\w/g, function (char) {
-                    return char.toUpperCase();
-                });
                 const transformed = {
-                    make: data.Make.trim().toLowerCase(),
-                    model: data.SubModel ? `${data.Model.trim()} ${data.SubModel.trim()}`.toLowerCase() : data.Model.trim().toLowerCase(),
-                    engineType: data.Engine ? data.Engine.trim() : '',
-                    year: data.YearNo.trim(),
+                    make: data.Make ? data.Make.trim().toLowerCase() : '',
+                    model: data.Model ? data.Model.trim().toLowerCase() : '',
+                    subModel: data.SubModel ? data.SubModel.trim().toLowerCase() : '',
+                    engine: data.Engine ? data.Engine.trim() : '',
+                    engineType: data.EngineType ? data.EngineType.trim() : '',
+                    fuelType: data.FuelType ? data.FuelType.trim() : '',
+                    vehicleQualifier: data.VehicleQualifier ? data.VehicleQualifier.trim() : '',
+                    years: getYearsInRange(data.YearNo),
+                    bhp: data.BHP ? data.BHP.trim() : '',
+                    valves: data.Valves ? data.Valves.trim() : '',
                     fitmentPosition: data.FitmentPosition ? data.FitmentPosition.trim() : '',
-                    discDiameter: data.DiscDiameter ? data.DiscDiameter.trim() : '',
-                    sku: data.PartCode.trim(),
+                    specialComments: data.SpecialComments ? data.SpecialComments.trim() : '',
+                    frontBrakeCaliperMake: data.FrontBrakeCaliperMake ? data.FrontBrakeCaliperMake.trim() : '',
+                    rearBrakeCaliperMake: data.RearBrakeCaliperMake ? data.RearBrakeCaliperMake.trim() : '', 
+                    frontDiscDiameter: data.FrontDiscDiameter ? data.FrontDiscDiameter.trim() : '',
+                    rearDiscDiameter: data.RearDiscDiameter ? data.RearDiscDiameter.trim() : '',
+                    kitComponents: data.kitComponents ? data.kitComponents.trim() : '',
+                    sku: data.PartCode ? data.PartCode.trim():'',
                 };
                 return transformed;
             })
@@ -198,12 +233,23 @@ const updateRow = async (req, res) => {
             data._id,
             {
                 $set: {
-                    make: data.make,
-                    model: data.model,
-                    engineType: data.engineType,
-                    year: data.year,
-                    fitmentPosition: data.fitmentPosition,
-                    discDiameter: data.discDiameter,
+                    make: data.make ? data.make.toLowerCase() :'',
+                    model: data.model ? data.model.toLowerCase() :'',
+                    subModel: data.subModel ? data.subModel.toLowerCase() :'',
+                    engine: data.engine ? data.engine :'',
+                    engineType: data.engineType ? data.engineType :'',
+                    fuelType: data.fuelType ? data.fuelType : '',
+                    vehicleQualifier: data.vehicleQualifier ? data.vehicleQualifier : '',
+                    years: data.years ? getYearsInRange(data.years) :[],
+                    bhp: data.bhp ? data.bhp :'',
+                    valves: data.valves ? data.valves :'',
+                    fitmentPosition: data.fitmentPosition ? data.fitmentPosition :'',
+                    specialComments: data.specialComments ? data.specialComments :'',
+                    frontBrakeCaliperMake: data.frontBrakeCaliperMake ? data.frontBrakeCaliperMake :'',
+                    rearBrakeCaliperMake: data.rearBrakeCaliperMake ? data.rearBrakeCaliperMake :'',
+                    frontDiscDiameter: data.frontDiscDiameter ? data.frontDiscDiameter :'',
+                    rearDiscDiameter: data.rearDiscDiameter ? data.rearDiscDiameter :'',
+                    kitComponents: data.kitComponents ? data.kitComponents :'',
                     sku: data.sku
                 }
             },
@@ -224,12 +270,24 @@ const addRow = async (req, res) => {
     const data = req.body;
     try {
         const newRow = new BikeCsvData({
-            make: data.make,
-            model: data.model,
-            engineType: data.engineType,
-            year: data.year,
-            fitmentPosition: data.fitmentPosition,
-            discDiameter: data.discDiameter,
+            make: data.make ? data.make.toLowerCase() :'',
+            model: data.model ? data.model.toLowerCase() :'',
+            subModel: data.subModel ? data.subModel.toLowerCase() :'',
+            engine: data.engine ? data.engine :'',
+            
+            engineType: data.engineType ? data.engineType :'',
+            fuelType: data.fuelType ? data.fuelType : '',
+            vehicleQualifier: data.vehicleQualifier ? data.vehicleQualifier : '',
+            years: data.years ? getYearsInRange(data.years) :[],
+            bhp: data.bhp ? data.bhp :'',
+            valves: data.valves ? data.valves :'',
+            fitmentPosition: data.fitmentPosition ? data.fitmentPosition :'',
+            specialComments: data.specialComments ? data.specialComments :'',
+            frontBrakeCaliperMake: data.frontBrakeCaliperMake ? data.frontBrakeCaliperMake :'',
+            rearBrakeCaliperMake: data.rearBrakeCaliperMake ? data.rearBrakeCaliperMake :'',
+            frontDiscDiameter: data.frontDiscDiameter ? data.frontDiscDiameter :'',
+            rearDiscDiameter: data.rearDiscDiameter ? data.rearDiscDiameter :'',
+            kitComponents: data.kitComponents ? data.kitComponents :'',
             sku: data.sku
         });
 
@@ -251,15 +309,22 @@ const removeAllDuplicates = async (req, res) => {
                     _id: {
                         make: "$make",
                         model: "$model",
+                        subModel: "$subModel",
+                        engine: "$engine",
                         engineType: "$engineType",
-                        year: "$year",
+                        fuelType: "$fuelType",
+                        vehicleQualifier: "$vehicleQualifier",
+                        years: "$years",
                         bhp: "$bhp",
+                        valves:"$valves",
+                        fitmentPosition:"$fitmentPosition",
+                        specialComments: "$specialComments",
                         frontBrakeCaliperMake: "$frontBrakeCaliperMake",
                         rearBrakeCaliperMake: "$rearBrakeCaliperMake",
-                        fitmentPosition: "$fitmentPosition",
-                        discDiameter: "$discDiameter",
-                        sku: "$sku",
-                        included: "$included"
+                        frontDiscDiameter: "$frontDiscDiameter",
+                        rearDiscDiameter: "$rearDiscDiameter",
+                        kitComponents: "$kitComponents",
+                        sku: "$sku"
                     },
                     docIds: { $addToSet: "$_id" },
                     count: { $sum: 1 }

@@ -68,11 +68,22 @@ export default function BikeAddRow({ refresh, close }) {
 
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', paddingBottom: '20px' }}>
                         <TextField label="Make" name="make" size="small" variant="standard" required />
-                        <TextField label="Model Sub Model" name="model" size="small" variant="standard" required />
-                        <TextField label="Engine Type" name="engineType" size="small" variant="standard" required />
-                        <TextField label="Year" name="year" size="small" variant="standard" required />
-                        <TextField label="Fitment Position" name="fitmentPosition" size="small" variant="standard" />
-                        <TextField label="Disc Diameter" name="discDiameter" size="small" variant="standard" />
+                        <TextField label="Model" name="model" size="small" variant="standard" required />
+                        <TextField label="Sub Model" name="subModel" size="small" variant="standard" required />
+                        <TextField label="Engine" name="engine" size="small" variant="standard" required />
+                        <TextField label="Engine Type" name="engineType" size="small" variant="standard" />
+                        <TextField label="Fuel Type" name="fuelType" size="small" variant="standard" required />
+                        <TextField label="Vehicle Qualifier" name="vehicleQualifier" size="small" variant="standard" />
+                        <TextField label="Years" name="years" size="small" variant="standard" required />
+                        <TextField label="BHP" name="bhp" size="small" variant="standard" />
+                        <TextField label="Valves" name="valves" size="small" variant="standard" />
+                        <TextField label="Fitment Position" name="fitmentPosition" size="small" variant="standard" required/>
+                        <TextField label="Special Comments" name="specialComments" size="small" variant="standard" />
+                        <TextField label="Front Brake Caliper" name="frontBrakeCaliperMake" size="small" variant="standard" />
+                        <TextField label="Rear Brake Caliper" name="rearBrakeCaliperMake" size="small" variant="standard" />
+                        <TextField label="Front Disc Diameter" name="frontDiscDiameter" size="small" variant="standard" />
+                        <TextField label="Rear Disc Diameter" name="rearDiscDiameter" size="small" variant="standard" />
+                        <TextField label="Kit Components" name="kitComponents" size="small" variant="standard" />
                         <TextField label="Part Code" name="sku" size="small" variant="standard" required />
                     </Box>
                     <Button

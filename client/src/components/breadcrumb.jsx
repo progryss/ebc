@@ -1,34 +1,9 @@
-import * as React from 'react';
-import { emphasize, styled } from '@mui/material/styles';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
-import Chip from '@mui/material/Chip';
-import HomeIcon from '@mui/icons-material/Home';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-const StyledBreadcrumb = styled(Chip)(({ theme }) => {
-  return {
-    backgroundColor: theme.palette.grey[100],
-    height: theme.spacing(3),
-    color: (theme.vars || theme).palette.text.primary,
-    fontWeight: theme.typography.fontWeightRegular,
-    '&:hover, &:focus': {
-      backgroundColor: emphasize(theme.palette.grey[100], 0.06),
-      ...theme.applyStyles('dark', {
-        backgroundColor: emphasize(theme.palette.grey[800], 0.06),
-      }),
-    },
-    '&:active': {
-      boxShadow: theme.shadows[1],
-      backgroundColor: emphasize(theme.palette.grey[100], 0.12),
-      ...theme.applyStyles('dark', {
-        backgroundColor: emphasize(theme.palette.grey[800], 0.12),
-      }),
-    },
-    ...theme.applyStyles('dark', {
-      backgroundColor: theme.palette.grey[800],
-    }),
-  };
-}); // TypeScript only: need a type cast here because https://github.com/Microsoft/TypeScript/issues/26591
+import * as React from 'react';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Typography from '@mui/material/Typography';
+import Link from '@mui/material/Link';
+import Stack from '@mui/material/Stack';
 
 function handleClick(event) {
   event.preventDefault();
@@ -36,22 +11,29 @@ function handleClick(event) {
 }
 
 export default function CustomizedBreadcrumbs({data}) {
+  const breadcrumbs = [
+    <Link underline="none" key="1" color="inherit" to="/" onClick={handleClick} sx={{display:'flex',alignItems:'center',fontSize:'14px'}}>
+       {data.icon1 && React.cloneElement(data.icon1)}{data.link1}
+    </Link>,
+    data.link2 && (<Link
+      underline="hover"
+      key="2"
+      color="inherit"
+      href="/material-ui/getting-started/installation/"
+      onClick={handleClick}
+      sx={{display:'flex',alignItems:'center',fontSize:'14px'}}
+    >
+      {data.link2}
+    </Link>),
+    data.text &&
+    <Typography key="3" color="inherit" sx={{display:'flex',alignItems:'center',fontSize:'14px'}}>{data.icon3 && React.cloneElement(data.icon3)}{data.text}</Typography>
+  ];
+
   return (
-    <div role="presentation" onClick={handleClick} className='container-fluid py-1' style={{border:'1px solid #eeebeb',borderWidth:'1px 0 1px 0'}}>
-      <Breadcrumbs aria-label="breadcrumb">
-        <StyledBreadcrumb
-          component="a"
-          href="#"
-          label={data.link1}
-          icon={<HomeIcon fontSize="small" />}
-        />
-        {data.link2 != '' ? <StyledBreadcrumb component="a" href="/" label={data.link2} /> : ''}
-        {/* <StyledBreadcrumb
-          label="Accessories"
-          deleteIcon={<ExpandMoreIcon />}
-          onDelete={handleClick}
-        /> */}
+    <Stack sx={{ width: '100%',padding:"5px 10px" }}>
+      <Breadcrumbs separator=">" aria-label="breadcrumb">
+        {breadcrumbs}
       </Breadcrumbs>
-    </div>
+    </Stack>
   );
 }

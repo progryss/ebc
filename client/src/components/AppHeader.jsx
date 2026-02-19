@@ -110,7 +110,7 @@ function AppHeader(props) {
             </Typography>
           </Stack>
         </FormGroup>
-        <CustomizedMenus user={validUser}/>
+        <CustomizedMenus user={validUser} mode={dasboardMode} />
       </Box>
       <CustomizedBreadcrumbs data={breadcrumbData} />
     </>

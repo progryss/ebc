@@ -49,8 +49,8 @@ const getCsvDataYears = async (req, res) => {
         // Perform aggregation to get unique years for the selected model
         const years = await BikeCsvData.aggregate([
             { $match: { make: selectedMake } },
-            { $group: { _id: "$year" } }, // Group documents by "startYear" field
-            { $project: { _id: 0, year: "$_id" } } // Project the "startYear" field without _id
+            { $group: { _id: "$years" } }, // Group documents by "startYear" field
+            { $project: { _id: 0, years: "$_id" } } // Project the "startYear" field without _id
         ]);
 
         res.status(200).send(years)
@@ -73,7 +73,7 @@ const getCsvDataModels = async (req, res) => {
 
         // Perform aggregation to get unique models for the selected make and year
         const uniqueModels = await BikeCsvData.aggregate([
-            { $match: { make: selectedMake, year: selectedYear } }, // Filter documents by selected make
+            { $match: { make: selectedMake, years: selectedYear } }, // Filter documents by selected make
             { $group: { _id: "$model" } }, // Group documents by "model" field
             { $project: { _id: 0, model: "$_id" } } // Project the "model" field without _id
         ]);
@@ -85,46 +85,48 @@ const getCsvDataModels = async (req, res) => {
     }
 }
 
-const getCsvDataEngineTypes = async (req, res) => {
-    try {
-        const selectedMake = req.query.make;
-        const selectedYear = req.query.year;
-        const selectedModel = req.query.model;
+const getCsvDataSubModels = async (req, res) => {
+  try {
+    // Extract the selected make and year value from the query parameters
+    const selectedMake = req.query.make;
+    const selectedYear = req.query.year;
+    const selectedModel = req.query.model;
 
-        // Check if the engine is provided
-        if (!selectedMake || !selectedModel || !selectedYear) {
-            return res.status(400).json({ error: 'Selected make , year and model is required' });
-        }
-
-        // Perform aggregation to get unique engine types for the selected year
-        const uniqueEngineTypes = await BikeCsvData.aggregate([
-            { $match: { model: selectedModel, make: selectedMake, year: selectedYear } },
-            { $group: { _id: "$engineType" } },
-            { $project: { _id: 0, engineType: "$_id" } }
-        ]);
-
-        res.status(200).send(uniqueEngineTypes)
-    } catch (error) {
-        console.error('Error fetching unique engine types:', error);
-        res.status(500).json({ error: 'Failed to fetch unique engine types' });
+    // Check if the selected make is provided
+    if (!selectedMake || !selectedYear || !selectedModel) {
+      return res
+        .status(400)
+        .json({ error: "Selected make, year and model is required" });
     }
-}
+
+    // Perform aggregation to get unique models for the selected make and year
+    const uniqueSubModels = await BikeCsvData.aggregate([
+      { $match: { make: selectedMake, years: selectedYear, model: selectedModel } }, // Filter documents by selected make
+      { $group: { _id: "$subModel" } }, // Group documents by "model" field
+      { $project: { _id: 0, subModel: "$_id" } }, // Project the "model" field without _id
+    ]);
+    res.status(200).send(uniqueSubModels.map((item) => item.subModel != "" ? item.subModel : 'all'));
+  } catch (error) {
+    console.error("Error fetching unique sub models:", error);
+    res.status(500).json({ error: "Failed to fetch unique sub models" });
+  }
+};
 
 const getCsvDataSkus = async (req, res) => {
     try {
-        const selectedModel = req.query.model;
         const selectedMake = req.query.make;
         const selectedYear = req.query.year;
-        const selectedEngineType = req.query.engine_type;
+        const selectedModel = req.query.model;
+        const selectedSubModel = req.query.sub_model;
 
         // Check all values are provided
-        if (!selectedMake || !selectedModel || !selectedYear || !selectedEngineType) {
-            return res.status(400).json({ error: 'Engine type is required' });
+        if (!selectedMake || !selectedModel || !selectedYear || !selectedSubModel) {
+            return res.status(400).json({ error: 'Selected make , year, model and sub_model are required' });
         }
 
         // Perform aggregation to get unique SKUs for the selected dropdown values
         const uniqueSKUs = await BikeCsvData.aggregate([
-            { $match: { model: selectedModel, make: selectedMake, year: selectedYear, engineType: selectedEngineType } },
+            { $match: { make: selectedMake, years: selectedYear, model: selectedModel, subModel: selectedSubModel } },
             { $group: { _id: "$sku" } },
             { $project: { _id: 0, sku: "$_id" } }
         ]);
@@ -138,13 +140,13 @@ const getCsvDataSkus = async (req, res) => {
 
 const getProductsBySkus = async (req, res) => {
     try {
-        const { skus, make, model, year, engineType } = req.body;
+        const {  make, year, model, subModel, skus } = req.body;
 
         let csvQuery = { 'sku': { $in: skus } };
         if (make) csvQuery.make = make;
+        if (year) csvQuery.years = year;
         if (model) csvQuery.model = model;
-        if (year) csvQuery.year = year;
-        if (engineType) csvQuery.engineType = engineType;
+        if (subModel) csvQuery.subModel = subModel;
 
         let productQuery = { 'variants.sku': { $in: skus } };
 
@@ -171,7 +173,7 @@ module.exports = {
     getCsvDataMakes,
     getCsvDataYears,
     getCsvDataModels,
-    getCsvDataEngineTypes,
+    getCsvDataSubModels,
     getCsvDataSkus,
     getProductsBySkus
 }

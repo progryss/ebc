@@ -5,7 +5,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import { useDropzone } from 'react-dropzone';
 import Modal from '@mui/material/Modal';
-import SubcategoryDetails from '../components/subcategoryDetails';
+import BikeSubcategoryDetails from './bikeSubCategoryDetails';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
@@ -219,7 +219,7 @@ function BikeFilterTags() {
         <>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', paddingTop: '20px' }}>
                 <Box className="ps-2">
-                    <Box>
+                    {/* <Box>
                         <p>Add Filter Section -</p>
                         <TextField
                             label="Enter Filter Heading"
@@ -239,7 +239,7 @@ function BikeFilterTags() {
                         >
                             Add Heading
                         </Button>
-                    </Box>
+                    </Box> */}
                     <Box className='mt-3' >
                         <p>Add Filter Option - </p>
                         <Box>
@@ -423,7 +423,7 @@ function BikeFilterTags() {
                 aria-describedby="modal-modal-description"
             >
                 <div>
-                    <SubcategoryDetails data={tagPopopData} refresh={refreshIt} closeModel={handleCloseModel} />
+                    <BikeSubcategoryDetails data={tagPopopData} refresh={refreshIt} closeModel={handleCloseModel} />
                 </div>
             </Modal>
 
