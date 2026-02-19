@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useProgressToast } from "./customHooks/useProgressToast";
+import { useProgressToast } from "../components/customHooks/useProgressToast";
 import { useDropzone } from 'react-dropzone';
 import { Box } from '@mui/material';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
@@ -12,7 +12,7 @@ function formatImageUrl(imageSrc) {
     return imageSrc.startsWith('http') || imageSrc.startsWith('blob:') ? imageSrc : `${serverUrl}${imageSrc}`;
 }
 
-function SubcategoryDetails({ data, refresh, closeModel }) {
+function BikeSubcategoryDetails({ data, refresh, closeModel }) {
 
     const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
 
@@ -70,7 +70,7 @@ function SubcategoryDetails({ data, refresh, closeModel }) {
             });
         }, 100);
         try {
-            await axios.put(`${serverUrl}/api/update-subcategory`, formData, {
+            await axios.put(`${serverUrl}/api/update-bike-subcategory`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 },
@@ -192,4 +192,4 @@ function SubcategoryDetails({ data, refresh, closeModel }) {
     );
 }
 
-export default SubcategoryDetails;
+export default BikeSubcategoryDetails;

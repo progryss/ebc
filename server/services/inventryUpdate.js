@@ -1,10 +1,8 @@
 require("dotenv").config();
 const axios = require("axios");
-const {
-  Product,
-  inventoryData,
-  inventoryUpdateHistory,
-} = require("../models/user-models");
+
+const { Product } = require("../models/userModel");
+const {inventoryData,inventoryUpdateHistory} = require("../models/inventoryDataModel");
 const { sendToAll } = require("./inventoryEvent");
 
 const performUpdateInventory = async () => {

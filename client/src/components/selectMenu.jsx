@@ -60,7 +60,7 @@ const StyledMenu = styled((props) => (
   },
 }));
 
-export default function CustomizedMenus({ user }) {
+export default function SelectMenu({ user, mode }) {
 
   const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -75,6 +75,10 @@ export default function CustomizedMenus({ user }) {
   };
 
   const handleLogout = async () => {
+    const confirmLogout = window.confirm("Are you sure you want to logout?");
+    if (!confirmLogout) {
+      return;
+    }
     const toastId = showProgressToast('Processing');
     updateProgress(toastId, 'loader', 'Processing');
     try {
@@ -95,17 +99,17 @@ export default function CustomizedMenus({ user }) {
   };
 
   const userStore = () => {
-    navigate('/user-register')
+    navigate('/users')
     setAnchorEl(null);
   };
 
   const visitProductTagInfo = () => {
-    navigate('/filter-tags')
+    navigate('/filter-tags');
     setAnchorEl(null);
   };
 
   const visitProductSortingInfo = () => {
-    navigate('/sorting-tags')
+    navigate('/sorting-tags');
     setAnchorEl(null);
   };
 
@@ -115,18 +119,18 @@ export default function CustomizedMenus({ user }) {
   }
 
   const inventoryStore = () => {
-    navigate('/inventory-store')
+    navigate('/store-inventory')
     setAnchorEl(null);
   }
 
   return (
-    <div>
+    <div style={{minWidth:'250px',textAlign:'end'}}>
       <Button
         id="demo-customized-button"
         aria-controls={open ? 'demo-customized-menu' : undefined}
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
-        variant="contained"
+        variant="outlined"
         disableElevation
         onClick={handleClick}
         endIcon={<KeyboardArrowDownIcon />}
@@ -144,19 +148,19 @@ export default function CustomizedMenus({ user }) {
       >
         <MenuItem onClick={goToDash} disableRipple>
           <HomeIcon />
-          Dashboard
+          {mode === 'bikes' ? 'Bike Dashboard' : 'Car Dashboard'}
         </MenuItem>
         <MenuItem onClick={visitProductTagInfo} disableRipple>
           <LocalOfferIcon />
-          Filter Tags
+          {mode === 'bikes' ? 'Bike Filter Tags' : 'Car Filter Tags'}
         </MenuItem>
         <MenuItem onClick={visitProductSortingInfo} disableRipple>
           <SortIcon />
-          Sorting Tags
+          {mode === 'bikes' ? 'Bike Sorting Tags' : 'Car Sorting Tags'}
         </MenuItem>
-        <MenuItem onClick={changePassword} disableRipple>
-          <EditIcon />
-          Change Password
+        <MenuItem onClick={inventoryStore} disableRipple>
+          <InventoryIcon />
+          Store Inventory
         </MenuItem>
         {user.role && (
           <MenuItem onClick={userStore} disableRipple>
@@ -164,9 +168,9 @@ export default function CustomizedMenus({ user }) {
             Users
           </MenuItem>
         )}
-        <MenuItem onClick={inventoryStore} disableRipple>
-          <InventoryIcon />
-          Inventory
+        <MenuItem onClick={changePassword} disableRipple>
+          <EditIcon />
+          Change Password
         </MenuItem>
         <MenuItem onClick={handleLogout} disableRipple>
           <LogoutIcon />
