@@ -9,6 +9,7 @@ ecosystem.config.js
 /client/node_modules/
 /server/node_modules/
 /server/uploads/
+/server/migrateYears.js
 uploads/
 # Optional: Ignore build output in frontend
 /client/build/

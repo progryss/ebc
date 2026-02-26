@@ -70,7 +70,7 @@ export default function AddRow({ refresh, close }) {
                         <TextField label="Make" name="make" size="small" variant="standard" required />
                         <TextField label="Model Sub Model" name="model" size="small" variant="standard" required />
                         <TextField label="Engine Type" name="engineType" size="small" variant="standard" required />
-                        <TextField label="Year" name="year" size="small" variant="standard" required />
+                        <TextField label="Years" name="years" size="small" variant="standard" required />
                         <TextField label="Bhp" name="bhp" size="small" variant="standard" />
                         <TextField label="Front Brake Caliper Make" name="frontBrakeCaliperMake" size="small" variant="standard" />
                         <TextField label="Rear Brake Caliper Make" name="rearBrakeCaliperMake" size="small" variant="standard" />

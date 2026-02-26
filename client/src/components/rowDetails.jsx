@@ -11,12 +11,16 @@ function RowDetails({ data, refresh, closeModel }) {
 
     const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
 
+    let yearString = data.years && data.years.length == 1 ? data.years[0]
+                        : data.years && data.years.length > 1 ? `${data.years[0]}-${data.years[data.years.length-1]}`
+                        : '' ;
+
     const initialEditValues = {
         _id: data._id,
         make: data.make,
         model: data.model,
         engineType: data.engineType,
-        year: data.year,
+        years: yearString ? yearString :'',
         bhp: data.bhp,
         frontBrakeCaliperMake: data.frontBrakeCaliperMake,
         rearBrakeCaliperMake: data.rearBrakeCaliperMake,
@@ -172,13 +176,13 @@ function RowDetails({ data, refresh, closeModel }) {
                                         />
                                     </div>
                                     <div>
-                                        <div className="label-title">Year</div>
+                                        <div className="label-title">Years</div>
                                         <input
                                             type="text"
                                             className="label-value"
-                                            onChange={(e) => handleChange('year', e.target.value)}
+                                            onChange={(e) => handleChange('years', e.target.value)}
                                             readOnly={isReadOnly}
-                                            value={flyObject.year ? flyObject.year : ''}
+                                            value={flyObject.years ? flyObject.years : ''}
                                         />
                                     </div>
                                     <div>

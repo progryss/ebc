@@ -73,7 +73,7 @@ export default function Dashboard() {
         const json = await response.json();
         if (response.ok) {
           const data = json.data;
-          setTotalPages(json.totalPages);
+          setTotalPages(json.totalPages); 
           setTotalRows(json.total);
           if (data.length > 0) {
             const keys = Object.keys(data[0])?.filter(
@@ -85,7 +85,7 @@ export default function Dashboard() {
               { id: "make", title: "Make" },
               { id: "model", title: "Model" },
               { id: "engineType", title: "Engine Type" },
-              { id: "year", title: "Year" },
+              { id: "years", title: "Year" },
               { id: "bhp", title: "Bhp" },
               { id: "frontBrakeCaliperMake", title: "Front Brake Caliper" },
               { id: "rearBrakeCaliperMake", title: "Rear Brake Caliper" },
@@ -767,6 +767,18 @@ export default function Dashboard() {
                                     checked={selectedRows.includes(row._id)}
                                     onChange={() => handleSelectRow(row._id)}
                                   />
+                                </td>
+                              );
+                            } else if (column.id === "years") {
+                              return (
+                                <td key={`row-${index}`}>
+                                  <span>
+                                    {row[column.id]?.length > 0
+                                      ? row[column.id].length === 1
+                                        ? row[column.id][0]
+                                        : `${row[column.id][0]}-${row[column.id][row[column.id].length - 1]}`
+                                      : ""}
+                                  </span>
                                 </td>
                               );
                             } else {
