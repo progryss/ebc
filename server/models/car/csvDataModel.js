@@ -18,6 +18,9 @@ const csvDataSchema = new mongoose.Schema({
         type: String,
         index: true // Adding index
     },
+    years: {
+        type: Array,
+    },
     bhp: {
         type: String
     },
@@ -48,7 +51,6 @@ csvDataSchema.index({
     make: 'text',
     model: 'text',
     sku: 'text',
-    year: 'text',
     fitmentPosition: 'text'
 });
 

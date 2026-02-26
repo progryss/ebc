@@ -49,8 +49,8 @@ const getCsvDataYears = async (req, res) => {
         // Perform aggregation to get unique years for the selected model
         const years = await CsvData.aggregate([
             { $match: { make: selectedMake } },
-            { $group: { _id: "$year" } }, // Group documents by "startYear" field
-            { $project: { _id: 0, year: "$_id" } } // Project the "startYear" field without _id
+            { $group: { _id: "$years" } }, // Group documents by "startYear" field
+            { $project: { _id: 0, years: "$_id" } } // Project the "startYear" field without _id
         ]);
 
         res.status(200).send(years)
@@ -73,7 +73,7 @@ const getCsvDataModels = async (req, res) => {
 
         // Perform aggregation to get unique models for the selected make and year
         const uniqueModels = await CsvData.aggregate([
-            { $match: { make: selectedMake, year: selectedYear } }, // Filter documents by selected make
+            { $match: { make: selectedMake, years: selectedYear } }, // Filter documents by selected make
             { $group: { _id: "$model" } }, // Group documents by "model" field
             { $project: { _id: 0, model: "$_id" } } // Project the "model" field without _id
         ]);
@@ -98,7 +98,7 @@ const getCsvDataEngineTypes = async (req, res) => {
 
         // Perform aggregation to get unique engine types for the selected year
         const uniqueEngineTypes = await CsvData.aggregate([
-            { $match: { model: selectedModel, make: selectedMake, year: selectedYear } },
+            { $match: { model: selectedModel, make: selectedMake, years: selectedYear } },
             { $group: { _id: "$engineType" } },
             { $project: { _id: 0, engineType: "$_id" } }
         ]);
@@ -124,7 +124,7 @@ const getCsvDataSkus = async (req, res) => {
 
         // Perform aggregation to get unique SKUs for the selected dropdown values
         const uniqueSKUs = await CsvData.aggregate([
-            { $match: { model: selectedModel, make: selectedMake, year: selectedYear, engineType: selectedEngineType } },
+            { $match: { model: selectedModel, make: selectedMake, years: selectedYear, engineType: selectedEngineType } },
             { $group: { _id: "$sku" } },
             { $project: { _id: 0, sku: "$_id" } }
         ]);
@@ -143,7 +143,7 @@ const getProductsBySkus = async (req, res) => {
         let csvQuery = { 'sku': { $in: skus } };
         if (make) csvQuery.make = make;
         if (model) csvQuery.model = model;
-        if (year) csvQuery.year = year;
+        if (year) csvQuery.years = year;
         if (engineType) csvQuery.engineType = engineType;
 
         let productQuery = { 'variants.sku': { $in: skus } };
