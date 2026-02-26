@@ -33,7 +33,7 @@ export default function BikeRowDetails({ data, refresh, closeModel }) {
         rearBrakeCaliperMake: data.rearBrakeCaliperMake ? data.rearBrakeCaliperMake :'',
         frontDiscDiameter: data.frontDiscDiameter ? data.frontDiscDiameter :'',
         rearDiscDiameter: data.rearDiscDiameter ? data.rearDiscDiameter :'',
-        kitComponents: data.KitComponents ? data.kitComponents :'',
+        kitComponents: data.kitComponents ? data.kitComponents :'',
         sku: data.sku
     };
 

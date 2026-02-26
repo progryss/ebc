@@ -2,6 +2,32 @@ const fs = require('fs');
 const csv = require('fast-csv');
 const { CsvData } = require('../../models/car/csvDataModel');
 
+function getYearsInRange(rangeString) {
+  if (!rangeString) return [];
+  const parts = rangeString.split("-").map(str => str.trim());
+
+  // ✅ If only one year
+  if (parts.length === 1) {
+    return [parts[0]];
+  }
+
+  const start = parseInt(parts[0]);
+  const end = parseInt(parts[1]);
+
+  if (isNaN(start) || isNaN(end)) return [];
+
+  const min = Math.min(start, end);
+  const max = Math.max(start, end);
+
+  const years = [];
+
+  for (let year = min; year <= max; year++) {
+    years.push(year.toString());
+  }
+
+  return years;
+}
+
 async function insertBatch(batch, batchNumber) {
     console.log(`Inserting batch ${batchNumber} with ${batch.length} records.`);
     await CsvData.insertMany(batch);
@@ -27,7 +53,7 @@ async function processCsvFile(filePath) {
                     make: data.Make.trim().toLowerCase(),
                     model: data.SubModel ? `${data.Model.trim()} ${data.SubModel.trim()}`.toLowerCase() : data.Model.trim().toLowerCase(),
                     engineType: combineEngineType.toLowerCase().trim(),
-                    year: data.YearNo.trim(),
+                    years: getYearsInRange(data.YearNo),
                     bhp: data['BHP'] ? data['BHP'].trim() : '',
                     frontBrakeCaliperMake: data.FrontBrakeCaliperMake ? data.FrontBrakeCaliperMake.trim() : '',
                     rearBrakeCaliperMake: data.RearBrakeCaliperMake ? data.RearBrakeCaliperMake.trim() : '',
@@ -207,7 +233,7 @@ const updateRow = async (req, res) => {
                     make: data.make,
                     model: data.model,
                     engineType: data.engineType,
-                    year: data.year,
+                    years: data.years ? getYearsInRange(data.years) :[],
                     bhp: data.bhp,
                     frontBrakeCaliperMake: data.frontBrakeCaliperMake,
                     rearBrakeCaliperMake: data.rearBrakeCaliperMake,
@@ -237,7 +263,7 @@ const addRow = async (req, res) => {
             make: data.make,
             model: data.model,
             engineType: data.engineType,
-            year: data.year,
+            years: data.years ? getYearsInRange(data.years) :[],
             bhp: data.bhp,
             frontBrakeCaliperMake: data.frontBrakeCaliperMake,
             rearBrakeCaliperMake: data.rearBrakeCaliperMake,
@@ -266,7 +292,7 @@ const removeAllDuplicates = async (req, res) => {
                         make: "$make",
                         model: "$model",
                         engineType: "$engineType",
-                        year: "$year",
+                        years: "$years",
                         bhp: "$bhp",
                         frontBrakeCaliperMake: "$frontBrakeCaliperMake",
                         rearBrakeCaliperMake: "$rearBrakeCaliperMake",

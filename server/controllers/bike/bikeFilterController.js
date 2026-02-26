@@ -117,12 +117,14 @@ const getCsvDataSkus = async (req, res) => {
         const selectedMake = req.query.make;
         const selectedYear = req.query.year;
         const selectedModel = req.query.model;
-        const selectedSubModel = req.query.sub_model;
+        let selectedSubModel = req.query.sub_model;
 
         // Check all values are provided
         if (!selectedMake || !selectedModel || !selectedYear || !selectedSubModel) {
             return res.status(400).json({ error: 'Selected make , year, model and sub_model are required' });
         }
+
+        selectedSubModel = selectedSubModel == 'all' ? '' : selectedSubModel;
 
         // Perform aggregation to get unique SKUs for the selected dropdown values
         const uniqueSKUs = await BikeCsvData.aggregate([
@@ -140,13 +142,15 @@ const getCsvDataSkus = async (req, res) => {
 
 const getProductsBySkus = async (req, res) => {
     try {
-        const {  make, year, model, subModel, skus } = req.body;
+        const {  make, year, model, skus } = req.body;
+
+        let subModel = req.body.subModel == 'all' ? '' : req.body.subModel;
 
         let csvQuery = { 'sku': { $in: skus } };
         if (make) csvQuery.make = make;
         if (year) csvQuery.years = year;
         if (model) csvQuery.model = model;
-        if (subModel) csvQuery.subModel = subModel;
+        csvQuery.subModel = subModel;
 
         let productQuery = { 'variants.sku': { $in: skus } };
 
