@@ -3,11 +3,11 @@ import axios from "axios";
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
-import { useProgressToast } from "./customHooks/useProgressToast";
+import { useProgressToast } from "../components/customHooks/useProgressToast";
 
 const serverUrl = process.env.REACT_APP_SERVER_URL;
 
-function RowDetails({ data, refresh, closeModel }) {
+export default function BikeRowDetails({ data, refresh, closeModel }) {
 
     const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
 
@@ -17,17 +17,24 @@ function RowDetails({ data, refresh, closeModel }) {
 
     const initialEditValues = {
         _id: data._id,
-        make: data.make,
-        model: data.model,
-        engineType: data.engineType,
+        make: data.make ? data.make :'',
+        model: data.model ? data.model :'',
+        subModel: data.subModel ? data.subModel :'',
+        engine: data.engine ? data.engine :'',
+        engineType: data.engineType ? data.engineType :'',
+        fuelType: data.fuelType ? data.fuelType : '',
+        vehicleQualifier: data.vehicleQualifier ? data.vehicleQualifier : '',
         years: yearString ? yearString :'',
-        bhp: data.bhp,
-        frontBrakeCaliperMake: data.frontBrakeCaliperMake,
-        rearBrakeCaliperMake: data.rearBrakeCaliperMake,
-        fitmentPosition: data.fitmentPosition,
-        discDiameter: data.discDiameter,
-        sku: data.sku,
-        included: data.included
+        bhp: data.bhp ? data.bhp :'',
+        valves: data.valves ? data.valves :'',
+        fitmentPosition: data.fitmentPosition ? data.fitmentPosition :'',
+        specialComments: data.specialComments ? data.specialComments :'',
+        frontBrakeCaliperMake: data.frontBrakeCaliperMake ? data.frontBrakeCaliperMake :'',
+        rearBrakeCaliperMake: data.rearBrakeCaliperMake ? data.rearBrakeCaliperMake :'',
+        frontDiscDiameter: data.frontDiscDiameter ? data.frontDiscDiameter :'',
+        rearDiscDiameter: data.rearDiscDiameter ? data.rearDiscDiameter :'',
+        kitComponents: data.kitComponents ? data.kitComponents :'',
+        sku: data.sku
     };
 
     const [isReadOnly, setIsReadOnly] = useState(true);
@@ -54,7 +61,7 @@ function RowDetails({ data, refresh, closeModel }) {
         }, 100);
 
         try {
-            await axios.put(`${serverUrl}/api/update-row`, flyObject, {
+            await axios.put(`${serverUrl}/api/update-bike-row`, flyObject, {
                 headers: { 'Content-Type': 'application/json' }
             });
             finalizeToast(toastId, true, "Update Successful!");
@@ -90,7 +97,7 @@ function RowDetails({ data, refresh, closeModel }) {
         }, 100);
 
         try {
-            await axios.delete(`${serverUrl}/api/delete-rows`, {
+            await axios.delete(`${serverUrl}/api/delete-bike-rows`, {
                 headers: { 'Content-Type': 'application/json' },
                 data: { ids: [editableValues._id] }
             });
@@ -156,13 +163,33 @@ function RowDetails({ data, refresh, closeModel }) {
                                         />
                                     </div>
                                     <div>
-                                        <div className="label-title">Model & Sub Model</div>
+                                        <div className="label-title">Model</div>
                                         <input
                                             type="text"
                                             className="label-value"
                                             onChange={(e) => handleChange('model', e.target.value)}
                                             readOnly={isReadOnly}
                                             value={flyObject.model ? flyObject.model : ''}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="label-title">Sub Model</div>
+                                        <input
+                                            type="text"
+                                            className="label-value"
+                                            onChange={(e) => handleChange('subModel', e.target.value)}
+                                            readOnly={isReadOnly}
+                                            value={flyObject.subModel ? flyObject.subModel : ''}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="label-title">Engine</div>
+                                        <input
+                                            type="text"
+                                            className="label-value"
+                                            onChange={(e) => handleChange('engine', e.target.value)}
+                                            readOnly={isReadOnly}
+                                            value={flyObject.engine ? flyObject.engine : ''}
                                         />
                                     </div>
                                     <div>
@@ -176,6 +203,26 @@ function RowDetails({ data, refresh, closeModel }) {
                                         />
                                     </div>
                                     <div>
+                                        <div className="label-title">Fuel Type</div>
+                                        <input
+                                            type="text"
+                                            className="label-value"
+                                            onChange={(e) => handleChange('fuelType', e.target.value)}
+                                            readOnly={isReadOnly}
+                                            value={flyObject.fuelType ? flyObject.fuelType : ''}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="label-title">Vehicle Qualifier</div>
+                                        <input
+                                            type="text"
+                                            className="label-value"
+                                            onChange={(e) => handleChange('vehicleQualifier', e.target.value)}
+                                            readOnly={isReadOnly}
+                                            value={flyObject.vehicleQualifier ? flyObject.vehicleQualifier : ''}
+                                        />
+                                    </div>
+                                    <div>
                                         <div className="label-title">Years</div>
                                         <input
                                             type="text"
@@ -186,33 +233,23 @@ function RowDetails({ data, refresh, closeModel }) {
                                         />
                                     </div>
                                     <div>
-                                        <div className="label-title">Front Brake Caliper Make</div>
-                                        <input
-                                            type="text"
-                                            className="label-value"
-                                            onChange={(e) => handleChange('frontBrakeCaliperMake', e.target.value)}
-                                            readOnly={isReadOnly}
-                                            value={flyObject.frontBrakeCaliperMake ? flyObject.frontBrakeCaliperMake : ''}
-                                        />
-                                    </div>
-                                    <div>
-                                        <div className="label-title">Rear Brake Caliper Make</div>
-                                        <input
-                                            type="text"
-                                            className="label-value"
-                                            onChange={(e) => handleChange('rearBrakeCaliperMake', e.target.value)}
-                                            readOnly={isReadOnly}
-                                            value={flyObject.rearBrakeCaliperMake ? flyObject.rearBrakeCaliperMake : ''}
-                                        />
-                                    </div>
-                                    <div>
-                                        <div className="label-title">Bhp</div>
+                                        <div className="label-title">BHP</div>
                                         <input
                                             type="text"
                                             className="label-value"
                                             onChange={(e) => handleChange('bhp', e.target.value)}
                                             readOnly={isReadOnly}
                                             value={flyObject.bhp ? flyObject.bhp : ''}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="label-title">valves</div>
+                                        <input
+                                            type="text"
+                                            className="label-value"
+                                            onChange={(e) => handleChange('valves', e.target.value)}
+                                            readOnly={isReadOnly}
+                                            value={flyObject.valves ? flyObject.valves : ''}
                                         />
                                     </div>
                                     <div>
@@ -226,13 +263,63 @@ function RowDetails({ data, refresh, closeModel }) {
                                         />
                                     </div>
                                     <div>
-                                        <div className="label-title">DiscDiameter</div>
+                                        <div className="label-title">Special Comments</div>
                                         <input
                                             type="text"
                                             className="label-value"
-                                            onChange={(e) => handleChange('discDiameter', e.target.value)}
+                                            onChange={(e) => handleChange('specialComments', e.target.value)}
                                             readOnly={isReadOnly}
-                                            value={flyObject.discDiameter ? flyObject.discDiameter : ''}
+                                            value={flyObject.specialComments ? flyObject.specialComments : ''}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="label-title">Front Brake Caliper</div>
+                                        <input
+                                            type="text"
+                                            className="label-value"
+                                            onChange={(e) => handleChange('frontBrakeCaliperMake', e.target.value)}
+                                            readOnly={isReadOnly}
+                                            value={flyObject.frontBrakeCaliperMake ? flyObject.frontBrakeCaliperMake : ''}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="label-title">Rear Brake Caliper</div>
+                                        <input
+                                            type="text"
+                                            className="label-value"
+                                            onChange={(e) => handleChange('rearBrakeCaliperMake', e.target.value)}
+                                            readOnly={isReadOnly}
+                                            value={flyObject.rearBrakeCaliperMake ? flyObject.rearBrakeCaliperMake : ''}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="label-title">Front Disc Diameter</div>
+                                        <input
+                                            type="text"
+                                            className="label-value"
+                                            onChange={(e) => handleChange('frontDiscDiameter', e.target.value)}
+                                            readOnly={isReadOnly}
+                                            value={flyObject.frontDiscDiameter ? flyObject.frontDiscDiameter : ''}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="label-title">Rear Disc Diameter</div>
+                                        <input
+                                            type="text"
+                                            className="label-value"
+                                            onChange={(e) => handleChange('rearDiscDiameter', e.target.value)}
+                                            readOnly={isReadOnly}
+                                            value={flyObject.rearDiscDiameter ? flyObject.rearDiscDiameter : ''}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="label-title">Kit Components</div>
+                                        <input
+                                            type="text"
+                                            className="label-value"
+                                            onChange={(e) => handleChange('kitComponents', e.target.value)}
+                                            readOnly={isReadOnly}
+                                            value={flyObject.kitComponents ? flyObject.kitComponents : ''}
                                         />
                                     </div>
                                     <div>
@@ -245,17 +332,6 @@ function RowDetails({ data, refresh, closeModel }) {
                                             value={flyObject.sku ? flyObject.sku : ''}
                                         />
                                     </div>
-                                    <div>
-                                        <div className="label-title">Kit Components</div>
-                                        <input
-                                            type="text"
-                                            className="label-value"
-                                            onChange={(e) => handleChange('included', e.target.value)}
-                                            readOnly={isReadOnly}
-                                            value={flyObject.included ? flyObject.included : ''}
-                                        />
-                                    </div>
-
                                 </div>
                             </div>
                             <div className="d-flex justify-content-between pt-4">
@@ -276,4 +352,3 @@ function RowDetails({ data, refresh, closeModel }) {
     );
 }
 
-export default RowDetails;

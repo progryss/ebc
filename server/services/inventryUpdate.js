@@ -1,10 +1,8 @@
-require("dotenv").config();
 const axios = require("axios");
-const {
-  Product,
-  inventoryData,
-  inventoryUpdateHistory,
-} = require("../models/user-models");
+require("dotenv").config();
+
+const { Product } = require("../models/productModel");
+const {inventoryData,inventoryUpdateHistory} = require("../models/inventoryDataModel");
 const { sendToAll } = require("./inventoryEvent");
 
 const performUpdateInventory = async () => {
@@ -108,6 +106,15 @@ const updateInventoryInDB = async (notificationResult) => {
       // console.log('-----------')
       console.log("Inventory saved to DB Successfully");
     }
+    const idsToKeep = await inventoryUpdateHistory
+      .find({}, { _id: 1 })
+      .sort({ startTimeDb: -1 })
+      .limit(10);
+
+    await inventoryUpdateHistory.deleteMany({
+      _id: { $nin: idsToKeep.map(d => d._id) }
+    });
+
   } catch (error) {
     console.error("Failed to update inventory in db", error);
   }

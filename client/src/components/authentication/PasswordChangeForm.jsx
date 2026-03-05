@@ -58,28 +58,6 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
     },
 }));
 
-const theme = createTheme({
-    palette: {
-        primary: {
-            main: '#000000',
-        },
-    },
-    components: {
-        MuiOutlinedInput: {
-            styleOverrides: {
-                root: {
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'black',
-                    },
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'black',
-                    },
-                },
-            },
-        },
-    },
-});
-
 const serverUrl = process.env.REACT_APP_SERVER_URL;
 
 export default function PasswordChange(props) {
@@ -182,103 +160,100 @@ export default function PasswordChange(props) {
 
 
     return (
-        <SignInContainer direction="column" justifyContent="space-between" sx={{ backgroundColor: "whitesmoke", height:"calc(100vh - 76px)" }} >
-            <ThemeProvider theme={theme}>
-                <Card variant="outlined">
-                    <Typography
-                        component="h1"
-                        variant="h4"
-                        sx={{ width: '100%', fontSize: { xs: '24px', md: '28px' } }}
-                    >
-                        Set New Password <LockPersonRoundedIcon />
-                    </Typography>
-                    <Box
-                        component="form"
-                        onSubmit={handleSubmit}
-                        noValidate
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            width: '100%',
-                            gap: 2,
-                        }}
-                    >
-                        <FormControl>
-                            <TextField
-                                error={passwordError}
-                                helperText={passwordErrorMessage}
-                                name="password"
-                                placeholder="New password"
-                                type={showPassword ? 'text' : 'password'}
-                                id="password"
-                                autoComplete="current-password"
-                                autoFocus
-                                required
-                                fullWidth
-                                variant="outlined"
-                                color={passwordError ? 'error' : 'primary'}
-                                onChange={(e) => setPassword(e.target.value)}
-                                value={password}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                aria-label="toggle password visibility"
-                                                onClick={handleTogglePasswordVisibility}
-                                                edge="end"
-                                            >
-                                                {showPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ),
-                                }}
-                            />
-                        </FormControl>
-
-                        <FormControl>
-                            <TextField
-                                error={confirmPasswordError}
-                                helperText={confirmPasswordErrorMessage}
-                                type={showconfirmPassword ? 'text' : 'password'}
-                                name="confirm_password"
-                                placeholder="Confirm New Password"
-                                id="confirm_password"
-                                autoComplete="current-password"
-                                autoFocus
-                                required
-                                fullWidth
-                                variant="outlined"
-                                color={confirmPasswordError ? 'error' : 'primary'}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                value={confirmPassword}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                aria-label="toggle password visibility"
-                                                onClick={handleToggleConfirmPasswordVisibility}
-                                                edge="end"
-                                            >
-                                                {showconfirmPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ),
-                                }}
-                            />
-                        </FormControl>
-
-                        <Button
-                            type="submit"
+        <SignInContainer direction="column" justifyContent="space-between" sx={{ backgroundColor: "whitesmoke", height: "calc(500px)" }} >
+            <Card variant="outlined">
+                <Typography
+                    component="h1"
+                    variant="h3"
+                    sx={{ width: '100%', fontSize: { xs: '24px', md: '28px' } }}
+                >
+                    Set New Password <LockPersonRoundedIcon />
+                </Typography>
+                <Box
+                    component="form"
+                    onSubmit={handleSubmit}
+                    noValidate
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        width: '100%',
+                        gap: 2,
+                    }}
+                >
+                    <FormControl>
+                        <TextField
+                            error={passwordError}
+                            helperText={passwordErrorMessage}
+                            name="password"
+                            placeholder="New password"
+                            type={showPassword ? 'text' : 'password'}
+                            id="password"
+                            autoComplete="current-password"
+                            autoFocus
+                            required
                             fullWidth
-                            variant="contained"
-                            sx={{ backgroundColor: "black" }}
-                        >
-                            Change Password
-                        </Button>
-                        <Typography variant='body1' color='#d32f2f' textAlign="center" component={'span'}>{apiError}</Typography>
-                    </Box>
-                </Card>
-            </ThemeProvider>
+                            variant="outlined"
+                            color={passwordError ? 'error' : 'primary'}
+                            onChange={(e) => setPassword(e.target.value)}
+                            value={password}
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            aria-label="toggle password visibility"
+                                            onClick={handleTogglePasswordVisibility}
+                                            edge="end"
+                                        >
+                                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
+                    </FormControl>
+
+                    <FormControl>
+                        <TextField
+                            error={confirmPasswordError}
+                            helperText={confirmPasswordErrorMessage}
+                            type={showconfirmPassword ? 'text' : 'password'}
+                            name="confirm_password"
+                            placeholder="Confirm New Password"
+                            id="confirm_password"
+                            autoComplete="current-password"
+                            autoFocus
+                            required
+                            fullWidth
+                            variant="outlined"
+                            color={confirmPasswordError ? 'error' : 'primary'}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            value={confirmPassword}
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            aria-label="toggle password visibility"
+                                            onClick={handleToggleConfirmPasswordVisibility}
+                                            edge="end"
+                                        >
+                                            {showconfirmPassword ? <VisibilityOff /> : <Visibility />}
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
+                    </FormControl>
+
+                    <Button
+                        type="submit"
+                        fullWidth
+                        variant="contained"
+                    >
+                        Change Password
+                    </Button>
+                    <Typography variant='body1' color='#d32f2f' textAlign="center" component={'span'}>{apiError}</Typography>
+                </Box>
+            </Card>
         </SignInContainer>
     );
 }

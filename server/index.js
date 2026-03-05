@@ -1,13 +1,13 @@
 const express = require('express');
-const connectDb = require('./utils/db');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
-const router = require('./router/auth-routes');
 const cookieParser = require('cookie-parser');
-const { connectRedis } = require('./redisClient');
-
 require('dotenv').config();
+
+const connectDb = require('./config/db')
+const { connectRedis } = require('./config/redis');
+const router = require('./router/routes');
 
 const app = express();
 

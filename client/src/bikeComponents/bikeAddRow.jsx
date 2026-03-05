@@ -4,10 +4,10 @@ import CloseIcon from '@mui/icons-material/Close';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import { useProgressToast } from "./customHooks/useProgressToast";
+import { useProgressToast } from '../components/customHooks/useProgressToast';
 const serverUrl = process.env.REACT_APP_SERVER_URL;
 
-export default function AddRow({ refresh, close }) {
+export default function BikeAddRow({ refresh, close }) {
 
     const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
 
@@ -31,7 +31,7 @@ export default function AddRow({ refresh, close }) {
         }, 100);
 
         try {
-            const response = await axios.post(`${serverUrl}/api/add-row`, payload, {
+            const response = await axios.post(`${serverUrl}/api/add-bike-row`, payload, {
                 headers: { "Content-Type": "application/json" }
             });
 
@@ -68,16 +68,23 @@ export default function AddRow({ refresh, close }) {
 
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', paddingBottom: '20px' }}>
                         <TextField label="Make" name="make" size="small" variant="standard" required />
-                        <TextField label="Model Sub Model" name="model" size="small" variant="standard" required />
-                        <TextField label="Engine Type" name="engineType" size="small" variant="standard" required />
+                        <TextField label="Model" name="model" size="small" variant="standard" required />
+                        <TextField label="Sub Model" name="subModel" size="small" variant="standard" required />
+                        <TextField label="Engine" name="engine" size="small" variant="standard" required />
+                        <TextField label="Engine Type" name="engineType" size="small" variant="standard" />
+                        <TextField label="Fuel Type" name="fuelType" size="small" variant="standard" required />
+                        <TextField label="Vehicle Qualifier" name="vehicleQualifier" size="small" variant="standard" />
                         <TextField label="Years" name="years" size="small" variant="standard" required />
-                        <TextField label="Bhp" name="bhp" size="small" variant="standard" />
-                        <TextField label="Front Brake Caliper Make" name="frontBrakeCaliperMake" size="small" variant="standard" />
-                        <TextField label="Rear Brake Caliper Make" name="rearBrakeCaliperMake" size="small" variant="standard" />
-                        <TextField label="Fitment Position" name="fitmentPosition" size="small" variant="standard" />
-                        <TextField label="Disc Diameter" name="discDiameter" size="small" variant="standard" />
+                        <TextField label="BHP" name="bhp" size="small" variant="standard" />
+                        <TextField label="Valves" name="valves" size="small" variant="standard" />
+                        <TextField label="Fitment Position" name="fitmentPosition" size="small" variant="standard" required/>
+                        <TextField label="Special Comments" name="specialComments" size="small" variant="standard" />
+                        <TextField label="Front Brake Caliper" name="frontBrakeCaliperMake" size="small" variant="standard" />
+                        <TextField label="Rear Brake Caliper" name="rearBrakeCaliperMake" size="small" variant="standard" />
+                        <TextField label="Front Disc Diameter" name="frontDiscDiameter" size="small" variant="standard" />
+                        <TextField label="Rear Disc Diameter" name="rearDiscDiameter" size="small" variant="standard" />
+                        <TextField label="Kit Components" name="kitComponents" size="small" variant="standard" />
                         <TextField label="Part Code" name="sku" size="small" variant="standard" required />
-                        <TextField label="Kit Components" name="included" size="small" variant="standard" />
                     </Box>
                     <Button
                         type="submit"

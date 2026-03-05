@@ -2,14 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { ResizableBox } from "react-resizable";
 import "react-resizable/css/styles.css";
-import RowDetails from "./rowDetails";
+import BikeRowDetails from "./bikeRowDetails";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Button from "@mui/material/Button";
 import Modal from "@mui/material/Modal";
-import AddRow from "./addRow";
-import { useProgressToast } from "./customHooks/useProgressToast";
-import Loader from "./loader";
+import BikeAddRow from "./bikeAddRow";
+import { useProgressToast } from "../components/customHooks/useProgressToast";
+import Loader from "../components/loader";
 
 import DeleteIcon from "@mui/icons-material/Delete";
 import SyncIcon from "@mui/icons-material/Sync";
@@ -21,7 +21,7 @@ const serverUrl = process.env.REACT_APP_SERVER_URL;
 
 const rowsPerPage = 100;
 
-export default function Dashboard() {
+export default function BikeDashboard() {
   const { showProgressToast, updateProgress, finalizeToast, setProgress } =
     useProgressToast();
   const navigate = useNavigate();
@@ -56,9 +56,10 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // update
   useEffect(() => {
     async function fetchCsvData(page) {
-      const url = `${serverUrl}/api/csv-data?page=${page}&limit=${rowsPerPage}&search=${search}`;
+      const url = `${serverUrl}/api/bike-csv-data?page=${page}&limit=${rowsPerPage}&search=${search}`;
       if (search !== "") {
         setIsLoading(true);
       }
@@ -73,7 +74,7 @@ export default function Dashboard() {
         const json = await response.json();
         if (response.ok) {
           const data = json.data;
-          setTotalPages(json.totalPages); 
+          setTotalPages(json.totalPages);
           setTotalRows(json.total);
           if (data.length > 0) {
             const keys = Object.keys(data[0])?.filter(
@@ -84,17 +85,22 @@ export default function Dashboard() {
               { id: "selectAll", title: "Select All" },
               { id: "make", title: "Make" },
               { id: "model", title: "Model" },
+              { id: "subModel", title: "Sub Model" },
+              { id: "engine", title: "Engine" },
               { id: "engineType", title: "Engine Type" },
+              { id: "fuelType", title: "Fuel Type" },
+              { id: "vehicleQualifier", title: "Vehicle Qualifier" },
               { id: "years", title: "Year" },
-              { id: "bhp", title: "Bhp" },
-              { id: "frontBrakeCaliperMake", title: "Front Brake Caliper" },
-              { id: "rearBrakeCaliperMake", title: "Rear Brake Caliper" },
+              { id: "bhp", title: "BHP" },
               { id: "fitmentPosition", title: "Fitment Position" },
-              { id: "discDiameter", title: "Disc Diameter" },
+              { id: "specialComments", title: "Special Comments" },
+              { id: "frontDiscDiameter", title: "Front Disc Diameter" },
+              { id: "rearDiscDiameter", title: "Rear Disc Diameter" },
               { id: "sku", title: "Part Code" },
-              { id: "included", title: "Kit Components" },
             ];
-            const savedColumns = JSON.parse(localStorage.getItem("columns"));
+            const savedColumns = JSON.parse(
+              localStorage.getItem("bikeColumns")
+            );
             if (savedColumns) {
               setColumns(savedColumns);
             } else {
@@ -123,10 +129,10 @@ export default function Dashboard() {
           setIsLoading(false);
         }
       } catch (err) {
-        console.log(err, "Error in Getting Members");
+        console.log(err, "Error in Getting data");
         navigate("/login");
       }
-      const savedWidths = JSON.parse(localStorage.getItem("columnWidths"));
+      const savedWidths = JSON.parse(localStorage.getItem("bikeColumnWidths"));
       if (savedWidths) {
         setColumnWidths(savedWidths);
       }
@@ -140,6 +146,7 @@ export default function Dashboard() {
     refreshData,
     search,
   ]);
+  // update
 
   // column drag
   const onDragEnd = (result) => {
@@ -150,7 +157,7 @@ export default function Dashboard() {
       updatedColumns.splice(result?.destination?.index, 0, reorderedColumn);
     }
     setColumns(updatedColumns);
-    localStorage.setItem("columns", JSON.stringify(updatedColumns));
+    localStorage.setItem("bikeColumns", JSON.stringify(updatedColumns));
   };
 
   // column toggle in sheet
@@ -167,7 +174,7 @@ export default function Dashboard() {
       updatedColumns = [...columns, newColumn];
     }
     setColumns(updatedColumns);
-    localStorage.setItem("columns", JSON.stringify(updatedColumns));
+    localStorage.setItem("bikeColumns", JSON.stringify(updatedColumns));
   };
 
   const isDate = (value) => {
@@ -212,7 +219,7 @@ export default function Dashboard() {
       [columnId]: width,
     };
     setColumnWidths(updatedWidths);
-    localStorage.setItem("columnWidths", JSON.stringify(updatedWidths));
+    localStorage.setItem("bikeColumnWidths", JSON.stringify(updatedWidths));
   };
 
   const handleSelectAll = () => {
@@ -244,7 +251,7 @@ export default function Dashboard() {
       const toastId = showProgressToast(`Deleting ${selectedRows.length} rows`);
       updateProgress(toastId, "loader", `Deleting ${selectedRows.length} rows`);
       try {
-        await axios.delete(`${serverUrl}/api/delete-rows`, {
+        await axios.delete(`${serverUrl}/api/delete-bike-rows`, {
           headers: {
             "Content-Type": "application/json",
           },
@@ -298,7 +305,7 @@ export default function Dashboard() {
 
   function updateProgressBar(toastId) {
     const progressInterval = setInterval(async () => {
-      const response = await fetch(`${serverUrl}/api/upload/progress`);
+      const response = await fetch(`${serverUrl}/api/bike-upload/progress`);
       const data = await response.json();
 
       if (!data.totalBatches) {
@@ -320,6 +327,7 @@ export default function Dashboard() {
     }, 3000);
   }
 
+  // updated
   const handleUploadCsv = async () => {
     if (!file) {
       alert("Please select a file first!");
@@ -333,7 +341,7 @@ export default function Dashboard() {
     const toastId = showProgressToast("Uploading CSV");
 
     try {
-      const response = await fetch(`${serverUrl}/api/upload-csv`, {
+      const response = await fetch(`${serverUrl}/api/upload-bike-csv`, {
         method: "POST",
         body: formData,
       });
@@ -358,6 +366,7 @@ export default function Dashboard() {
       console.error("Error uploading file:", error);
     }
   };
+  // updated
 
   const deleteCsvData = async () => {
     const userResponse = window.confirm("Are you sure you want to delete?");
@@ -365,7 +374,7 @@ export default function Dashboard() {
     const toastId = showProgressToast("Deleting CSV data");
     updateProgress(toastId, "loader", "Deleting CSV data");
     try {
-      await fetch(`${serverUrl}/api/delete-csv`, {
+      await fetch(`${serverUrl}/api/delete-bike-csv`, {
         method: "POST",
       });
       refreshIt();
@@ -430,7 +439,7 @@ export default function Dashboard() {
     updateProgress(toastId, "loader", "Deleting Duplicates");
     try {
       const response = await axios.delete(
-        `${serverUrl}/api/remove-duplicateCsv`
+        `${serverUrl}/api/remove-bike-duplicateCsv`
       );
       if (response.status === 200) {
         refreshIt();
@@ -583,8 +592,6 @@ export default function Dashboard() {
                             />{" "}
                             {key === "sku"
                               ? "Part No"
-                              : key === "included"
-                              ? "Kit Components"
                               : key}
                           </label>
                         </li>
@@ -610,7 +617,7 @@ export default function Dashboard() {
                 aria-describedby="modal-modal-description"
               >
                 <div>
-                  <AddRow refresh={refreshIt} close={handleClose} />
+                  <BikeAddRow refresh={refreshIt} close={handleClose} />
                 </div>
               </Modal>
               <Button
@@ -786,14 +793,12 @@ export default function Dashboard() {
                                 <td key={`row-${index}`}>
                                   <span className={column.id}>
                                     {" "}
-                                    {column.id === "included"
-                                      ? row[column.id].join(", ")
-                                      : column.id === "make"
+                                    { column.id === "make"
                                       ? row[column.id].toUpperCase()
                                       : column.id === "model"
                                       ? row[column.id].toUpperCase()
-                                      : column.id === "engineType"
-                                      ? capitalizeWords(row[column.id])
+                                      : column.id === "subModel"
+                                      ? row[column.id].toUpperCase()
                                       : row[column.id]}{" "}
                                   </span>
                                 </td>
@@ -906,7 +911,7 @@ export default function Dashboard() {
         aria-describedby="modal-modal-description"
       >
         <div>
-          <RowDetails
+          <BikeRowDetails
             data={rowPopop}
             refresh={refreshIt}
             closeModel={handleCloseModel}

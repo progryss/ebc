@@ -5,7 +5,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import { useDropzone } from 'react-dropzone';
 import Modal from '@mui/material/Modal';
-import SubcategoryDetails from './subcategoryDetails';
+import BikeSubcategoryDetails from './bikeSubCategoryDetails';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
@@ -50,7 +50,7 @@ function a11yProps(index) {
     };
 }
 
-function FilterTags() {
+function BikeFilterTags() {
 
     const [category, setCategory] = useState('');
     const [subCategory, setSubcategory] = useState('');
@@ -80,7 +80,7 @@ function FilterTags() {
             name: category
         };
         try {
-            const response = await axios.post(`${serverUrl}/api/add-category`, payload, {
+            const response = await axios.post(`${serverUrl}/api/add-bike-category`, payload, {
                 withCredentials: true
             });
             console.log(response.data);
@@ -108,7 +108,7 @@ function FilterTags() {
         formData.append('labelText', labelText);
         formData.append('labelImage', labelImage);
         try {
-            const response = await axios.put(`${serverUrl}/api/update-category`, formData, {
+            const response = await axios.put(`${serverUrl}/api/update-bike-category`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -132,7 +132,7 @@ function FilterTags() {
 
     const getCategory = async () => {
         try {
-            const response = await axios.get(`${serverUrl}/api/get-category`, {
+            const response = await axios.get(`${serverUrl}/api/get-bike-category`, {
                 withCredentials: true
             })
             setFilterData(response.data)
@@ -163,7 +163,7 @@ function FilterTags() {
         const userResponse = window.confirm(`Are you sure you want to delete ( ${payload.subCategory} ) ?`);
         if (!userResponse) return;
         try {
-            let response = await axios.delete(`${serverUrl}/api/delete-subCategory`, {
+            let response = await axios.delete(`${serverUrl}/api/delete-bike-subCategory`, {
                 data: payload,  // Using data property to send body
                 withCredentials: true
             });
@@ -203,7 +203,7 @@ function FilterTags() {
         category.options = newOptions
         const payload = category
         try {
-            const response = await axios.put(`${serverUrl}/api/update-subcategory-order`, payload, {
+            const response = await axios.put(`${serverUrl}/api/update-bike-subcategory-order`, payload, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -423,7 +423,7 @@ function FilterTags() {
                 aria-describedby="modal-modal-description"
             >
                 <div>
-                    <SubcategoryDetails data={tagPopopData} refresh={refreshIt} closeModel={handleCloseModel} />
+                    <BikeSubcategoryDetails data={tagPopopData} refresh={refreshIt} closeModel={handleCloseModel} />
                 </div>
             </Modal>
 
@@ -431,4 +431,4 @@ function FilterTags() {
     );
 }
 
-export default FilterTags;
+export default BikeFilterTags;

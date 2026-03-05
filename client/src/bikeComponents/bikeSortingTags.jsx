@@ -1,10 +1,10 @@
 import { Button } from '@mui/material';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { useProgressToast } from "./customHooks/useProgressToast";
+import { useProgressToast } from "../components/customHooks/useProgressToast";
 
 const serverUrl = process.env.REACT_APP_SERVER_URL;
-function SortingTags() {
+function BikeSortingTags() {
     const { showProgressToast, updateProgress, finalizeToast, setProgress } = useProgressToast();
     const [value, setValue] = useState('')
 
@@ -15,7 +15,7 @@ function SortingTags() {
             sortingTags: value
         }
         try {
-            const response = await axios.put(`${serverUrl}/api/update-sorting-tags`, payload)
+            const response = await axios.put(`${serverUrl}/api/update-bike-sorting-tags`, payload)
             console.log(response)
             finalizeToast(toastId, true, "Data Saved Successfully!");
         } catch (error) {
@@ -26,7 +26,7 @@ function SortingTags() {
 
     const getSortingTags = async () => {
         try {
-            const response = await axios.get(`${serverUrl}/api/sorting-tags`);
+            const response = await axios.get(`${serverUrl}/api/bike-sorting-tags`);
             setValue(response.data[0].sortTag)
         } catch (error) {
             console.log(error)
@@ -37,7 +37,7 @@ function SortingTags() {
     }, [])
     return (
         <div className='mt-4 ms-2'>
-            <p>Car Sorting Tags : (Add multiple product tags with comma "," separator)</p>
+            <p>Bike Sorting Tags : (Add multiple product tags with comma "," separator)</p>
             <textarea onChange={e => setValue(e.target.value)} name="w3review" rows="10" value={value} placeholder='Add tags here...' style={{ padding: '10px', width: "calc(100% - 10px )" }} />
             <div>
                 <Button variant='contained' className='mt-3' onClick={updateSortingTags}>Update</Button>
@@ -46,4 +46,4 @@ function SortingTags() {
     )
 }
 
-export default SortingTags;
+export default BikeSortingTags;
