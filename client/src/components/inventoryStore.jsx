@@ -81,10 +81,27 @@ function InventoryStore() {
 
   function formatDateAndTime(date) {
     const d = new Date(date);
-    const dateOptions = { year: '2-digit', month: 'short', day: '2-digit' };
-    const formattedDate = d.toLocaleDateString('en-GB', dateOptions).replace(/ /g, '-');
-    const timeOptions = { hour: 'numeric', minute: 'numeric', hour12: true };
-    const formattedTime = d.toLocaleTimeString('en-US', timeOptions);
+
+    const dateOptions = {
+      year: "2-digit",
+      month: "short",
+      day: "2-digit",
+      timeZone: "Europe/London",
+    };
+
+    const formattedDate = d
+      .toLocaleDateString("en-GB", dateOptions)
+      .replace(/ /g, "-");
+
+    const timeOptions = {
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+      timeZone: "Europe/London",
+    };
+
+    const formattedTime = d.toLocaleTimeString("en-GB", timeOptions);
+
     return [formattedDate, formattedTime];
   }
 
@@ -145,9 +162,9 @@ function InventoryStore() {
 
   return (
     <div style={{ padding: '15px 10px', maxWidth: '1200px', margin: 'auto' }}>
-      <Button onClick={saveFreshInventory} variant='contained' sx={{ marginBottom: '10px' }} disabled={notification?.startTimeDb !== '' ?true:false}>
+      {/* <Button onClick={saveFreshInventory} variant='contained' sx={{ marginBottom: '10px' }} disabled={notification?.startTimeDb !== '' ?true:false}>
         Update Inventory
-      </Button>
+      </Button> */}
       {
         notification.startTimeDb !== '' && notification.endTimeStore === '' ? (
           <div style={cardDesign}>
